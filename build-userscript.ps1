@@ -1,7 +1,10 @@
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$outputPath = Join-Path $repoRoot 'tampermonkey-script.js'
+$artifactsDirectory = Join-Path $repoRoot 'artifacts'
+$timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$outputFileName = "tampermonkey-script-$timestamp.js"
+$outputPath = Join-Path $artifactsDirectory $outputFileName
 $sourceFiles = @(
     'src/meta/header.js'
     'src/core/shared.js'
@@ -22,6 +25,38 @@ $sections = foreach ($relativePath in $sourceFiles) {
 }
 
 $combined = ($sections -join '')
+
+if (-not (Test-Path $artifactsDirectory)) {
+    New-Item -ItemType Directory -Path $artifactsDirectory | Out-Null
+}
+
+function Get-StringSha256([string] $text) {
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($text)
+        $hashBytes = $sha256.ComputeHash($bytes)
+        return ([System.BitConverter]::ToString($hashBytes)).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $sha256.Dispose()
+    }
+}
+
+$latestArtifact = Get-ChildItem -Path $artifactsDirectory -Filter 'tampermonkey-script-*.js' -File |
+    Sort-Object Name -Descending |
+    Select-Object -First 1
+
+$newHash = Get-StringSha256 $combined
+$latestHash = $null
+
+if ($latestArtifact) {
+    $latestHash = (Get-FileHash -Path $latestArtifact.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+if ($latestHash -eq $newHash) {
+    Write-Output "No artifact created. Content hash matches latest artifact: $($latestArtifact.FullName)"
+    exit 0
+}
+
 [System.IO.File]::WriteAllText($outputPath, $combined)
 
 Write-Output "Built $outputPath from $($sourceFiles.Count) source files."

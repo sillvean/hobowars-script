@@ -6,12 +6,12 @@ Split the monolithic userscript into smaller source files organized by concern, 
 
 The current script already has useful internal boundaries:
 
-- shared config, constants, and descriptors near the top of [tampermonkey-script.js](tampermonkey-script.js)
-- utilities in [tampermonkey-script.js](tampermonkey-script.js#L485)
-- theme and dark mode in [tampermonkey-script.js](tampermonkey-script.js#L535)
-- layout and navigation restructuring in [tampermonkey-script.js](tampermonkey-script.js#L808)
-- gameplay/page-specific features in [tampermonkey-script.js](tampermonkey-script.js#L1294)
-- bootstrap flow in [tampermonkey-script.js](tampermonkey-script.js#L1671)
+- shared config, constants, and descriptors near the top of [src/seed/tampermonkey-script-seed.js](src/seed/tampermonkey-script-seed.js)
+- utilities in [src/seed/tampermonkey-script-seed.js](src/seed/tampermonkey-script-seed.js#L485)
+- theme and dark mode in [src/seed/tampermonkey-script-seed.js](src/seed/tampermonkey-script-seed.js#L535)
+- layout and navigation restructuring in [src/seed/tampermonkey-script-seed.js](src/seed/tampermonkey-script-seed.js#L808)
+- gameplay/page-specific features in [src/seed/tampermonkey-script-seed.js](src/seed/tampermonkey-script-seed.js#L1294)
+- bootstrap flow in [src/seed/tampermonkey-script-seed.js](src/seed/tampermonkey-script-seed.js#L1671)
 
 ## Tampermonkey Research Summary
 
@@ -34,7 +34,7 @@ That gives us two realistic options:
 
 ## Recommended Approach
 
-Use smaller source files in the repo, but keep `tampermonkey-script.js` as the generated install artifact.
+Use smaller source files in the repo, but emit the generated userscript as a timestamped build artifact under `artifacts/`.
 
 Why this is the safest fit here:
 
@@ -46,8 +46,9 @@ Why this is the safest fit here:
 ### Development model
 
 - `src/` becomes the source of truth
-- `tampermonkey-script.js` remains the assembled output
+- `artifacts/` holds generated userscript builds
 - a tiny build step concatenates files in dependency order
+- when the assembled content changes, the build emits a new timestamped artifact so builds are easy to distinguish without duplicating identical outputs
 - optional: a Tampermonkey dev wrapper can `@require` the built local file for quicker iteration
 
 ## Proposed File Layout
@@ -85,6 +86,8 @@ src/
   bootstrap/
     main.js
 build-userscript.ps1
+artifacts/
+  tampermonkey-script-YYYYMMDD-HHMMSS.js
 ```
 
 ### Notes on the proposed split
@@ -109,7 +112,7 @@ Refactor in small passes so the generated script can stay runnable after each pa
 
 1. Create the `src/` directory tree.
 2. Move only the metadata block into `src/meta/header.js`.
-3. Add a minimal build script that concatenates source files in a fixed order into `tampermonkey-script.js`.
+3. Add a minimal build script that concatenates source files in a fixed order into a timestamped artifact under `artifacts/`.
 4. Verify that the generated output is byte-for-byte or behaviorally equivalent before any logic moves.
 
 ### Phase 2: Extract low-risk shared code
@@ -156,8 +159,9 @@ Because this repo is currently very small, start with a simple concatenation bui
 Recommended first version:
 
 - `build-userscript.ps1` reads files in a declared order
-- it inserts separating newlines between files
-- it writes the assembled output to `tampermonkey-script.js`
+- it compares the assembled script hash against the latest artifact hash
+- it only writes a new file when the content changes
+- changed builds are written to `artifacts/tampermonkey-script-YYYYMMDD-HHMMSS.js`
 
 Possible later upgrade:
 
@@ -185,14 +189,14 @@ For faster iteration, we can optionally keep a second tiny userscript in Tamperm
 // @version      1.0.0
 // @match        https://www.hobowars.com/game/*
 // @grant        none
-// @require      file:///ABSOLUTE/PATH/TO/hobowars-script/tampermonkey-script.js
+// @require      file:///ABSOLUTE/PATH/TO/hobowars-script/artifacts/tampermonkey-script-YYYYMMDD-HHMMSS.js
 // ==/UserScript==
 ```
 
 Notes:
 
 - this depends on Tampermonkey having access to local file URLs
-- it is useful for local iteration, but should not replace the generated distributable file in the repo
+- because artifact filenames are timestamped, this is better suited to install/distribution snapshots than a stable dev loop
 
 ## Verification Checklist
 
@@ -222,7 +226,7 @@ After each extraction step, verify:
 This refactor is complete when:
 
 - source logic lives in concern-based files under `src/`
-- `tampermonkey-script.js` is generated from those source files
+- a timestamped userscript artifact is generated from those source files under `artifacts/` only when the content differs from the latest artifact
 - the generated userscript preserves current behavior
 - file ordering is explicit and documented
 - local development and install/update workflow are both straightforward
