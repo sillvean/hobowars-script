@@ -74,12 +74,7 @@ function styleNavigationMenus() {
     const sidebarLinks = qsa(".left-panel>ul>li>a");
     styleNavLinks(sidebarLinks);
 
-    const groups = [
-        ["AWAKE DUMP", awakeDumpElementDescriptors],
-        ["DAILIES", dailyElementDescriptors],
-        ["SHOPS", shopElementDescriptors],
-    ];
-    groups.forEach(([title, descriptors]) => {
+    navigationSidebarGroups.forEach(({ title, descriptors }) => {
         addPanelLabel(leftPanel, title);
         sidebarLinks
             .filter((link) => startsWithAny(link.innerHTML, descriptors))

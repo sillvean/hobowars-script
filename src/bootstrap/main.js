@@ -1,23 +1,39 @@
-function enhanceCommonLayout() {
+function applyTheme() {
+    applyDarkMode();
+}
+
+function applyLayout() {
     relocateStats();
     relocateResources();
     relocateTopbarMenu();
     hideClutter();
+    layoutLivingArea();
     buildRightPanel();
     resizeTopbar();
     buildTopbarSettings();
     styleNavigationMenus();
+}
+
+function runGlobalFeatures() {
+    enhanceSwimmingTopbar();
+    bindLivingAreaTabRefresh();
+    applyMapFix();
+}
+
+function runPageFeatures() {
+    cleanupLivingArea();
     enhanceHitlistTable();
     hideShopItemsByName();
-    applyMapFix();
     solveRPSLS();
+    enhanceRankingsTable();
+    enhanceUniGrid();
 }
 
 function main() {
-    applyDarkMode();
-    enhanceCommonLayout();
-    enhanceRankingsTable();
-    enhanceUniGrid();
+    applyTheme();
+    applyLayout();
+    runGlobalFeatures();
+    runPageFeatures();
 }
 
 main();

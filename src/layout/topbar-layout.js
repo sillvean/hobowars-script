@@ -121,51 +121,13 @@ function relocateClock() {
     const dateEl = qs("i", sections[0]);
     css(dateEl, { display: "none" });
     const newDate = createEl("span", {
+        className: "hw-clock-date",
         innerText: dateEl.innerText,
         style: { "align-items": "center", display: "flex", margin: "0 10px 2px 2px" },
     });
 
     const displayEffect = qs(".displayEffect", sections[0]);
     css(displayEffect, { "padding-right": "23px" });
-
-    const clockLabel = qs("#clock", sections[0]);
-    const swimmingReminder = createEl("span", {
-        innerText: "",
-        style: {
-            color: colors.lightGray,
-            display: "flex",
-            "align-items": "center",
-            "font-size": "11px",
-            "margin-left": "8px",
-            "white-space": "nowrap",
-        },
-    });
-    clockLabel.after(swimmingReminder);
-
-    const updateSwimmingClockState = () => {
-        const gameNow = parseGameClockDate(dateEl.innerText, clockLabel.innerText);
-        const isSwimmingHour = gameNow ? isSwimmingHourAt(gameNow) : false;
-        const nextSwimmingStart = gameNow ? getNextSwimmingWindowStart(gameNow) : null;
-
-        css(sections[0], {
-            color: isSwimmingHour ? colors.blue : colors.almostWhite,
-            "font-weight": "bold",
-            display: "flex",
-        });
-
-        newDate.innerText = dateEl.innerText;
-        swimmingReminder.innerText = gameNow
-            ? formatNextSwimmingReminder(gameNow, nextSwimmingStart)
-            : "Swim: n/a";
-        swimmingReminder.style.color = isSwimmingHour ? colors.blue : colors.lightGray;
-    };
-
-    updateSwimmingClockState();
-
-    if (!clock.dataset.swimmingClockLiveUpdateBound) {
-        window.setInterval(updateSwimmingClockState, 1000);
-        clock.dataset.swimmingClockLiveUpdateBound = "true";
-    }
 
     sections[0].prepend(newDate);
     sections[0].append(displayEffect);

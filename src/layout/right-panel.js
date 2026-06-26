@@ -1,9 +1,3 @@
-const RIGHT_PANEL_AREAS = [
-    "Northern Fence", "City", "Bernard's Mansion", "Second City",
-    "Hoburbia", "Canbodia", "Carnival", "Chocolate Factory", "Fort Slugworth",
-];
-const RIGHT_PANEL_INFO = ["Gang", "Lotto Land", "Message Boards"];
-
 function buildRightPanel() {
     const panelMinWidth = "149px";
     const panelWidth = "15%";
@@ -33,30 +27,24 @@ function buildRightPanel() {
         },
     });
 
-    addPanelLabel(rightPanel, "AREAS");
-
     qsa(".menu-label").forEach((label) => css(label, { color: colors.lightGray }));
     css(qsa(".left-panel>ul")[1], { "padding-bottom": "0" });
 
     const sidebarLinks = qsa(".left-panel>ul>li>a");
-    sidebarLinks
-        .filter((link) => startsWithAny(link.innerHTML, RIGHT_PANEL_AREAS))
-        .forEach((link) => moveLinkIntoPanel(rightPanel, link));
 
-    addPanelLabel(rightPanel, "INFO");
-    sidebarLinks
-        .filter((link) => startsWithAny(link.innerHTML, RIGHT_PANEL_INFO))
-        .forEach((link) => moveLinkIntoPanel(rightPanel, link));
+    rightPanelSections.forEach(({ title, descriptors }) => {
+        addPanelLabel(rightPanel, title);
+        sidebarLinks
+            .filter((link) => startsWithAny(link.innerHTML, descriptors))
+            .forEach((link) => moveLinkIntoPanel(rightPanel, link));
+    });
 
-    // Extra shortcuts.
-    moveLinkIntoPanel(rightPanel, createEl("a", {
-        href: "game.php?sr=197&cmd=gathering&do=board&board=13",
-        innerHTML: "Gang Boards",
-    }));
-    moveLinkIntoPanel(rightPanel, createEl("a", {
-        href: "game.php?sr=115&cmd=active",
-        innerHTML: "Players Online",
-    }));
+    rightPanelShortcuts.forEach(({ href, label }) => {
+        moveLinkIntoPanel(rightPanel, createEl("a", {
+            href,
+            innerHTML: label,
+        }));
+    });
 
     const container = qs(".container");
     container.append(rightSpacer);

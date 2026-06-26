@@ -36,25 +36,68 @@ const iconsMapping = {
     "Bernard": icons.neckTie
 };
 
-const awakeDumpElementDescriptors = [
-    "The Hoburbs",
-    "River",
-    "Mines",
-    "Technicolor Jungle",
-    "Matching Game"
+const navigationSidebarGroups = [
+    {
+        title: "AWAKE DUMP",
+        descriptors: [
+            "The Hoburbs",
+            "River",
+            "Mines",
+            "Technicolor Jungle",
+            "Matching Game",
+        ],
+    },
+    {
+        title: "DAILIES",
+        descriptors: [
+            "Beach",
+            "Jungle",
+            "Soup Kitchen",
+            "Pawn Shop",
+            "Recycling Bin",
+            "Explore City",
+            "Wellness Clinic",
+        ],
+    },
+    {
+        title: "SHOPS",
+        descriptors: [
+            "Candy Store",
+            "Liquor Store",
+            "Dive Bar",
+            "Skill Shop",
+        ],
+    },
 ];
-const dailyElementDescriptors = [
-    "Beach",
-    "Jungle",
-    "Soup Kitchen",
-    "Pawn Shop",
-    "Recycling Bin",
-    "Explore City",
-    "Wellness Clinic",
+
+const rightPanelSections = [
+    {
+        title: "AREAS",
+        descriptors: [
+            "Northern Fence",
+            "City",
+            "Bernard's Mansion",
+            "Second City",
+            "Hoburbia",
+            "Canbodia",
+            "Carnival",
+            "Chocolate Factory",
+            "Fort Slugworth",
+        ],
+    },
+    {
+        title: "INFO",
+        descriptors: ["Gang", "Lotto Land", "Message Boards"],
+    },
 ];
-const shopElementDescriptors = [
-    "Candy Store",
-    "Liquor Store",
-    "Dive Bar",
-    "Skill Shop"
+
+const rightPanelShortcuts = [
+    {
+        href: "game.php?sr=197&cmd=gathering&do=board&board=13",
+        label: "Gang Boards",
+    },
+    {
+        href: "game.php?sr=115&cmd=active",
+        label: "Players Online",
+    },
 ];
