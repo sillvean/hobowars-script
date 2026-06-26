@@ -1,3 +1,12 @@
+// ==UserScript==
+// @name         HoboWars Enhancements
+// @namespace    http://tampermonkey.net/
+// @version      1.0.0
+// @description  HoboWars Enhancements
+// @author       Sillvean
+// @match        https://www.hobowars.com/game/*
+// @grant        none
+// ==/UserScript==
 
 // Feature flags. Colors live in `colors`, icon SVGs in `icons`, and nav
 // grouping in the descriptor lists further below.
@@ -54,7 +63,6 @@ const hiddenShopItemNames = new Set([
     "Rainbow Drop",
     "Wonka-stripe Candy Cane",
 ]);
-
 const colors = {
     orange: "#fcb214",
     red: "#e01414",
@@ -66,7 +74,6 @@ const colors = {
     midGray: "#444",
     lightGray: "#999"
 };
-
 const swimmingStartMonthIndex = 0;
 const swimmingStartDayOfMonth = 5;
 const swimmingStartHours = [2];
@@ -257,8 +264,6 @@ function formatNextSwimmingReminder(now, nextStart) {
     }
 
     return `Swim: ${monthShortNames[nextStart.getMonth()]} ${nextStart.getDate()} ${formatSwimmingHour(nextStart)}`;
-}
-
 const icons = {
     house: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16">
   <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
@@ -409,7 +414,6 @@ const icons = {
     liquor: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><title>Beer-line SVG Icon</title><path fill="currentColor" d="M9 3a2 2 0 0 1 1.972 2.335l1.973.33a4.011 4.011 0 0 0-.005-1.361A2 2 0 0 1 15.733 7H5a1 1 0 1 1 .539-1.843a1 1 0 0 0 1.513-.614A2.001 2.001 0 0 1 9 3m1.516-1.703A3.998 3.998 0 0 0 5.51 3.043A3 3 0 0 0 3 8.236V20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2h2a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2v-.354a4 4 0 0 0-4.896-6.169a4.01 4.01 0 0 0-1.588-1.18M17 11h2v7h-2zm-2-2v11H5V9zm-8 2v7h2v-7zm6 0v7h-2v-7z"/></svg>`
 
 };
-
 const iconsMapping = {
     "Backpack": icons.backpack,
     "City Hall": icons.bank2,
@@ -470,6 +474,1212 @@ const shopElementDescriptors = [
     "Dive Bar",
     "Skill Shop"
 ];
-
 const pageTitle = document.querySelector(".content-wrap>.content-area>center>font>b")?.innerText;
+/* =============================================================================
+ * UTILITIES
+ * Tiny DOM/style helpers shared by every section.
+ * ========================================================================== */
 
+const qs = (selector, root = document) => root.querySelector(selector);
+const qsa = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+// Apply a map of CSS declarations. A value ending in "!important" is applied
+// with priority; a null/undefined value removes the property.
+function css(node, styles) {
+    if (!node) {
+        return node;
+    }
+
+    for (const [property, raw] of Object.entries(styles)) {
+        if (raw == null) {
+            node.style.removeProperty(property);
+            continue;
+        }
+
+        const value = String(raw);
+        if (value.endsWith("!important")) {
+            node.style.setProperty(property, value.replace(/\s*!important$/, ""), "important");
+        } else {
+            node.style.setProperty(property, value);
+        }
+    }
+
+    return node;
+}
+
+// Create an element with optional inline styles and assignable properties
+// (innerHTML, textContent, href, className, ...).
+function createEl(tag, { style, ...props } = {}) {
+    const node = Object.assign(document.createElement(tag), props);
+    if (style) {
+        css(node, style);
+    }
+    return node;
+}
+
+// Attach hover enter/leave callbacks.
+function onHover(node, onEnter, onLeave) {
+    node.addEventListener("mouseover", () => onEnter(node));
+    node.addEventListener("mouseout", () => onLeave(node));
+}
+
+const startsWithAny = (text, prefixes) => prefixes.some((prefix) => text.startsWith(prefix));
+
+/* =============================================================================
+ * THEME (COLORS)
+ * The palette lives in `colors`. Everything that only assigns colors lives in
+ * this section: shared accent helpers plus the dark-mode recolor passes.
+ * ========================================================================== */
+
+// Swap a notification count badge between its idle and highlighted colors.
+function styleCountBadge(badge, highlighted) {
+    if (!badge) {
+        return;
+    }
+
+    css(badge, {
+        "background-color": highlighted ? colors.black : colors.orange,
+        color: highlighted ? colors.orange : colors.black,
+    });
+}
+
+// Paint a nav link in its idle (accent on dark) or active (dark on accent) state.
+function paintNavLink(node, active, { withBadge = false } = {}) {
+    css(node, {
+        "background-color": active ? colors.orange : colors.darkGray,
+        color: `${active ? colors.black : colors.orange} !important`,
+    });
+
+    if (withBadge) {
+        styleCountBadge(node.querySelector(".count"), active);
+    }
+}
+
+// Accent hover behavior shared by every nav link. Selected links keep their
+// highlighted look on mouse-out.
+function addNavHover(node, { withBadge = false } = {}) {
+    const isSelected = node.classList.contains("sel");
+    onHover(
+        node,
+        (n) => paintNavLink(n, true, { withBadge }),
+        (n) => {
+            if (!isSelected) {
+                paintNavLink(n, false, { withBadge });
+            }
+        }
+    );
+}
+
+function applyDarkMode() {
+    if (!darkMode) {
+        return;
+    }
+
+    darkModeButtons();
+    darkModeLivingArea();
+    darkModeShop();
+}
+
+function darkModeButtons() {
+    qsa("a.btn").forEach((btn) => css(btn, { background: colors.darkGray, color: colors.orange }));
+}
+
+function darkModeLivingArea() {
+    const gearInfo = qs("#gearInfo");
+    const contentAreaTable = qs(".content-area > table");
+    const contentAreaTopCell = qs(".content-area > table td[valign='top']");
+    const tabLinks = qs("#tabLinks");
+    const tabLinkItems = tabLinks ? qsa("a", tabLinks) : [];
+    const selectedTabLink = qs("#tabLinks a#sel");
+
+    tabLinkItems.forEach((tab) => css(tab, {
+        "background-color": `${colors.midGray} !important`,
+        color: `${colors.almostWhite} !important`,
+    }));
+
+    if (selectedTabLink) {
+        css(selectedTabLink, {
+            "background-color": `${colors.darkGray} !important`,
+            color: `${colors.orange} !important`,
+        });
+    }
+
+    // Re-apply styling when the active tab changes (content is swapped in place).
+    if (tabLinks && !tabLinks.dataset.darkModeObserverAttached) {
+        let refreshScheduled = false;
+        const observer = new MutationObserver(() => {
+            if (refreshScheduled) {
+                return;
+            }
+
+            refreshScheduled = true;
+            window.requestAnimationFrame(() => {
+                refreshScheduled = false;
+                darkModeLivingArea();
+            });
+        });
+
+        observer.observe(tabLinks, { subtree: true, attributes: true, attributeFilter: ["id"] });
+        tabLinks.dataset.darkModeObserverAttached = "true";
+    }
+
+    if (!gearInfo) {
+        return;
+    }
+
+    const hideLineByLabel = (containerSelector, labelText) => {
+        const line = qsa(`${containerSelector} .line`).find(
+            (el) => el.querySelector("span")?.textContent?.trim() === labelText
+        );
+        if (line) {
+            css(line, { display: "none" });
+        }
+    };
+
+    const panelStyle = (el) => css(el, {
+        "background-color": `${colors.midGray} !important`,
+        color: `${colors.almostWhite} !important`,
+        border: "2px",
+    });
+
+    panelStyle(gearInfo);
+
+    if (contentAreaTable) {
+        css(contentAreaTable, {
+            border: "0 !important",
+            outline: `1px solid ${colors.orange} !important`,
+            "outline-offset": "0 !important",
+            "margin-bottom": "10px !important",
+        });
+    }
+
+    if (contentAreaTopCell) {
+        css(contentAreaTopCell, { "padding-right": "8px !important" });
+    }
+
+    qsa("#gearInfo font").forEach((font) => css(font, { color: colors.almostWhite }));
+    qsa("#gearInfo>div").forEach(panelStyle);
+    qsa("#gearInfo table, #gearInfo tbody, #gearInfo tr, #gearInfo td").forEach((el) => css(el, {
+        "background-color": `${colors.midGray} !important`,
+        color: `${colors.almostWhite} !important`,
+    }));
+    panelStyle(qs(".more_info>div"));
+
+    const tattoo = qs("#tattooImg");
+    if (tattoo) {
+        css(tattoo, { right: "150px" });
+    }
+
+    const arenaLine = qs("#battleRecord input[name='playArena']")?.closest(".line");
+    if (arenaLine) {
+        css(arenaLine, { display: "none" });
+    }
+
+    const mailForm = qs("form[action*='cmd=mail'][action*='do=delsel']");
+    if (mailForm) {
+        if (mailForm.previousElementSibling) {
+            css(mailForm.previousElementSibling, { display: "none" });
+        }
+        css(mailForm, { display: "none" });
+    }
+
+    const accountLinksList = qs("ul.more_info.nofloat.statsDisplay");
+    const referredLink = accountLinksList?.querySelector("a[href*='cmd=referred']")?.closest("li");
+    if (accountLinksList && referredLink && !accountLinksList.querySelector("a[href*='cmd=rfriend']")) {
+        const referItem = createEl("li", { className: "nofloat" });
+        referItem.appendChild(createEl("a", { href: "game.php?sr=154&cmd=rfriend", textContent: "Refer" }));
+        accountLinksList.insertBefore(referItem, referredLink);
+    }
+
+    const newsHeader = qsa("div[style*='height:25px']").find((el) => el.textContent?.includes("News"));
+    if (newsHeader) {
+        css(newsHeader, {
+            "background-color": `${colors.darkGray} !important`,
+            color: `${colors.almostWhite} !important`,
+            border: `1px solid ${colors.orange} !important`,
+            "border-bottom": `1px solid ${colors.orange} !important`,
+        });
+        qsa("a", newsHeader).forEach((link) => css(link, { color: `${colors.orange} !important` }));
+
+        const rssIcon = qs("#rss img", newsHeader);
+        if (rssIcon) {
+            css(rssIcon, { display: "none" });
+        }
+
+        const newsPanel = newsHeader.nextElementSibling;
+        if (newsPanel) {
+            css(newsPanel, {
+                border: "0 !important",
+                outline: `1px solid ${colors.orange} !important`,
+                "outline-offset": "-1px !important",
+                "margin-top": "-1px !important",
+                "margin-bottom": "10px !important",
+            });
+
+            if (accountLinksList) {
+                newsPanel.insertAdjacentElement("afterend", accountLinksList);
+            }
+        }
+    }
+
+    const invitePromoLink = qsa("a[href*='cmd=rfriend']").find((link) => link.textContent?.trim() === "Click Here");
+    if (invitePromoLink) {
+        let promoStart = invitePromoLink;
+        while (promoStart.previousSibling) {
+            promoStart = promoStart.previousSibling;
+            if (
+                promoStart.nodeType === Node.ELEMENT_NODE &&
+                promoStart.matches("div[style*='margin-left:20px']") &&
+                promoStart.querySelector("img")
+            ) {
+                break;
+            }
+        }
+
+        if (newsHeader) {
+            let sibling = promoStart;
+            while (sibling && sibling !== newsHeader) {
+                const next = sibling.nextSibling;
+                sibling.remove?.();
+                sibling = next;
+            }
+        }
+    }
+
+    qsa("ul.nofloat li.nofloat, ul.nofloat li").forEach((item) => {
+        const text = item.textContent || "";
+
+        if (text.includes("Chat!")) {
+            const chatIcon = item.querySelector("img");
+            if (chatIcon) {
+                css(chatIcon, { display: "none" });
+            }
+        }
+
+        if (text.includes("Account settings")) {
+            css(item, { display: "none" });
+        }
+    });
+
+    [
+        ["#generalDisplay", "Name:"],
+        ["#generalDisplay", "Gang:"],
+        ["#generalDisplay", "Level:"],
+        ["#generalDisplay", "Cans:"],
+        ["#generalDisplay", "Tokens:"],
+        ["#generalDisplay", "Meals Left:"],
+        ["#generalDisplay", "Awake:"],
+        ["#generalDisplay", "Alive:"],
+        ["#generalDisplay", "Skills:"],
+        ["#combatStats", "Speed*:"],
+        ["#combatStats", "Damage*:"],
+        ["#combatStats", "Defense*:"],
+        ["#beggingStats", "Begging Level:"],
+        ["#resourcesDisplay", "Money (On Hand):"],
+        ["#resourcesDisplay", "Money (In Bank):"],
+        ["#resourcesDisplay", "Points:"],
+        ["#resourcesDisplay", "Tokens:"],
+        ["#personalInfo", "Gender:"],
+        ["#personalInfo", "Spouse:"],
+    ].forEach(([selector, label]) => hideLineByLabel(selector, label));
+
+    const drinkingStats = qs("#drinkingStats");
+    if (drinkingStats) {
+        css(drinkingStats, { display: "none" });
+    }
+}
+
+function darkModeShop() {
+    if (pageTitle !== "Pawn Czar") {
+        return;
+    }
+
+    qsa("font").forEach((font) => css(font, { color: colors.almostWhite }));
+    qsa(".shopCost").forEach((cost) => css(cost, { color: colors.almostWhite }));
+}
+
+/* =============================================================================
+ * LAYOUT
+ * Everything that hides, moves, or restructures page elements. Color choices
+ * here come from the palette/theme helpers; this section owns *where* things
+ * go, not the color values.
+ * ========================================================================== */
+
+// --- Top bar: stats, resources, clock --------------------------------------
+
+// Wrap a top-bar list item so it keeps the site styling once relocated.
+function relocateTopbarListItem(parent, item, width) {
+    const wrapperList = createEl("ul");
+    wrapperList.append(item);
+    const wrapper = createEl("span", { style: { display: "inline-block" } });
+    wrapper.append(wrapperList);
+    parent.append(wrapper);
+
+    css(item, { width: width, "margin-right": "10px", color: `${colors.orange} !important` });
+    css(qs("a", item), { color: `${colors.orange} !important` });
+}
+
+// Rebuild a stat bar as an icon + bar + centered description overlay.
+function restyleStatBar(statBar, color, icon) {
+    css(statBar, { background: `${color} !important` });
+
+    const statBarArea = statBar.parentElement;
+    css(statBarArea, {
+        "border-width": "1px",
+        "border-color": colors.orange,
+        "border-style": "solid",
+        height: "24px",
+        width: "160px",
+        display: "inline-block",
+        position: "relative",
+    });
+
+    const ancestor = statBarArea.parentElement;
+    const root = ancestor.parentElement;
+    const description = qs(".playerStatsText", root);
+    css(description, { color: colors.white, "margin-left": "8px" });
+
+    const iconWrapper = createEl("div", {
+        innerHTML: icon,
+        className: "icon-wrapper",
+        style: {
+            display: "inline-block",
+            height: "24px",
+            "border-width": "1px 0 1px 1px",
+            "border-color": colors.orange,
+            "border-style": "solid",
+            padding: "3px",
+        },
+    });
+
+    const statBarWithIcon = createEl("div", { style: { display: "flex", "align-items": "center" } });
+    statBarWithIcon.append(iconWrapper, statBarArea);
+    ancestor.append(statBarWithIcon);
+
+    const overlay = createEl("div", {
+        className: "statbarOverlay",
+        style: {
+            display: "flex",
+            "align-items": "center",
+            position: "absolute",
+            top: "50%",
+            left: "0",
+            width: "80%",
+            height: "50%",
+            "z-index": "100",
+            background: colors.black,
+            opacity: ".75",
+        },
+    });
+    overlay.append(description);
+    statBarArea.append(overlay);
+}
+
+function relocateStats() {
+    const stats = qs(".top-center>.stats");
+    css(stats, { margin: "0 auto", display: "flex", "justify-content": "center" });
+
+    const list = qs("ul", stats);
+    css(list, { display: "none" });
+    qsa("li", list).slice(0, 4).forEach((item) => relocateTopbarListItem(stats, item, "220px"));
+
+    restyleStatBar(qs("#levelBarFill"), colors.lightGray, icons.personFill);
+    restyleStatBar(qs("#lifeBarFill"), colors.red, icons.heartPulseFill);
+    restyleStatBar(qs("#awakeBarFill"), colors.orange, icons.batteryCharging);
+    restyleStatBar(qs("#bacBarFill"), colors.blue, icons.drink);
+}
+
+function relocateResources() {
+    const resources = qs(".top-center>.currency");
+    css(resources, { margin: "6px auto 0px auto", display: "flex", "justify-content": "center" });
+
+    const list = qs("ul", resources);
+    css(list, { display: "none" });
+    const items = qsa("li", list);
+
+    items.slice(0, 4).forEach((item) => relocateTopbarListItem(resources, item, "130px"));
+
+    // Remove the colon from the Token resource.
+    items[3].innerHTML = items[3].innerHTML.replace(":", "");
+
+    if (demoMode) {
+        css(qs(".no-mobile.displayMoney"), { visibility: "hidden" });
+        css(qs(".no-mobile.displayBank"), { visibility: "hidden" });
+        items[2].innerHTML = "<b>Points</b>";
+        css(qs(".no-mobile>.displayTokens"), { visibility: "hidden" });
+    }
+
+    relocateClock();
+}
+
+function relocateClock() {
+    const clock = qs(".clock");
+    css(clock, {
+        display: "flex",
+        "justify-content": "right",
+        border: "0px",
+        "padding-right": "10px",
+    });
+
+    const sections = qsa(".clock>.section-row");
+    css(sections[1], { display: "none" });
+    css(sections[2], { display: "none" });
+
+    const dateEl = qs("i", sections[0]);
+    css(dateEl, { display: "none" });
+    const newDate = createEl("span", {
+        innerText: dateEl.innerText,
+        style: { "align-items": "center", display: "flex", margin: "0 10px 2px 2px" },
+    });
+
+    const displayEffect = qs(".displayEffect", sections[0]);
+    css(displayEffect, { "padding-right": "23px" });
+
+    const clockLabel = qs("#clock", sections[0]);
+    const swimmingReminder = createEl("span", {
+        innerText: "",
+        style: {
+            color: colors.lightGray,
+            display: "flex",
+            "align-items": "center",
+            "font-size": "11px",
+            "margin-left": "8px",
+            "white-space": "nowrap",
+        },
+    });
+    clockLabel.after(swimmingReminder);
+
+    const updateSwimmingClockState = () => {
+        const gameNow = parseGameClockDate(dateEl.innerText, clockLabel.innerText);
+        const isSwimmingHour = gameNow ? isSwimmingHourAt(gameNow) : false;
+        const nextSwimmingStart = gameNow ? getNextSwimmingWindowStart(gameNow) : null;
+
+        css(sections[0], {
+            color: isSwimmingHour ? colors.blue : colors.almostWhite,
+            "font-weight": "bold",
+            display: "flex",
+        });
+
+        newDate.innerText = dateEl.innerText;
+        swimmingReminder.innerText = gameNow
+            ? formatNextSwimmingReminder(gameNow, nextSwimmingStart)
+            : "Swim: n/a";
+        swimmingReminder.style.color = isSwimmingHour ? colors.blue : colors.lightGray;
+    };
+
+    updateSwimmingClockState();
+
+    if (!clock.dataset.swimmingClockLiveUpdateBound) {
+        window.setInterval(updateSwimmingClockState, 1000);
+        clock.dataset.swimmingClockLiveUpdateBound = "true";
+    }
+
+    sections[0].prepend(newDate);
+    sections[0].append(displayEffect);
+
+    const currency = qs(".currency");
+    currency.append(clock);
+
+    const donator = qs(".becomedon");
+    css(donator, { "display": "none" });
+
+    currency.append(displayEffect);
+}
+
+function relocateTopbarMenu() {
+    css(qs(".topbar-menu"), { margin: "0 auto", display: "flex", "justify-content": "center" });
+}
+
+// Hide site chrome we do not want: logo, big icons, player name, footer,
+// and the account panels.
+function hideClutter() {
+    css(qs(".top-left"), { display: "none" });
+    css(qs(".bmenu"), { display: "none" });
+    css(qs(".pname"), { display: "none" });
+    css(qs(".footer"), { display: "none" });
+
+    const leftPanelLists = qsa(".left-panel>ul");
+    css(leftPanelLists[1], { display: "none" });
+    css(leftPanelLists[2], { display: "none" });
+}
+
+// --- Navigation menus ------------------------------------------------------
+
+// Base look + accent hover (with count-badge swap) for menu links.
+function styleNavLinks(links) {
+    links.forEach((link) => {
+        css(link, { "border-radius": "0px", color: `${colors.orange} !important` });
+        addNavHover(link, { withBadge: true });
+    });
+}
+
+function insertSidebarIcon(link, descriptor, icon) {
+    if (link.innerHTML.startsWith(descriptor)) {
+        link.prepend(createEl("span", { innerHTML: icon, style: { "margin-right": "8px" } }));
+    }
+}
+
+function replaceWithIcon(link, descriptor, icon) {
+    if (!link.innerHTML.startsWith(descriptor)) {
+        return;
+    }
+
+    link.innerHTML = icon;
+    css(link, { display: "flex", "align-items": "center", padding: "8px", height: "100%" });
+    css(qs("svg", link), { width: "24px", height: "24px" });
+}
+
+function addPanelLabel(panel, title) {
+    const label = createEl("div", {
+        innerHTML: title,
+        style: {
+            display: "flex",
+            "align-items": "center",
+            width: "100%",
+            padding: "1em 5%",
+            color: colors.lightGray,
+            "font-weight": "bold",
+        },
+    });
+    panel.append(label);
+    return label;
+}
+
+// Move a link into a side panel and give it the panel item look + hover.
+function moveLinkIntoPanel(panel, link) {
+    panel.append(link);
+    css(link, {
+        "border-style": "dotted",
+        "border-width": "0 0 1px 0",
+        "border-color": colors.orange,
+        color: `${colors.orange} !important`,
+        display: "flex",
+        "align-items": "center",
+        width: "100%",
+        height: "40px",
+        padding: "1em 5%",
+    });
+    addNavHover(link, { withBadge: false });
+}
+
+function styleNavigationMenus() {
+    const leftPanel = qs(".left-panel");
+    css(leftPanel, { "background-color": colors.darkGray });
+
+    // Top bar: hover styling + replace text labels with icons.
+    const topbarLinks = qsa(".topbar-menu>ul>li>a");
+    styleNavLinks(topbarLinks);
+    topbarLinks.forEach((link) => {
+        for (const [descriptor, icon] of Object.entries(iconsMapping)) {
+            replaceWithIcon(link, descriptor, icon);
+        }
+    });
+
+    // Sidebar: hover styling, then regroup links under labeled sections.
+    const sidebarLinks = qsa(".left-panel>ul>li>a");
+    styleNavLinks(sidebarLinks);
+
+    const groups = [
+        ["AWAKE DUMP", awakeDumpElementDescriptors],
+        ["DAILIES", dailyElementDescriptors],
+        ["SHOPS", shopElementDescriptors],
+    ];
+    groups.forEach(([title, descriptors]) => {
+        addPanelLabel(leftPanel, title);
+        sidebarLinks
+            .filter((link) => startsWithAny(link.innerHTML, descriptors))
+            .forEach((link) => moveLinkIntoPanel(leftPanel, link));
+    });
+
+    // Sidebar link cosmetics + count badges + icons.
+    sidebarLinks.forEach((link) => {
+        css(link, {
+            "border-style": "dotted",
+            "border-color": colors.orange,
+            padding: "1em 5%",
+            display: "flex",
+            "align-items": "center",
+        });
+
+        const badge = link.querySelector(".count");
+        if (badge) {
+            css(badge, {
+                "background-color": colors.orange,
+                color: colors.black,
+                padding: "4px 8px",
+                "margin-right": "0",
+                "margin-left": "auto",
+                "margin-top": "4px",
+                display: badge.innerHTML === "0" ? "none" : null,
+            });
+        }
+
+        for (const [descriptor, icon] of Object.entries(iconsMapping)) {
+            insertSidebarIcon(link, descriptor, icon);
+        }
+    });
+
+    // Highlight the currently selected link in both menus.
+    qsa(".sel").forEach((link) => paintNavLink(link, true, { withBadge: true }));
+}
+
+const RIGHT_PANEL_AREAS = [
+    "Northern Fence", "City", "Bernard's Mansion", "Second City",
+    "Hoburbia", "Canbodia", "Carnival", "Chocolate Factory", "Fort Slugworth",
+];
+const RIGHT_PANEL_INFO = ["Gang", "Lotto Land", "Message Boards"];
+
+function buildRightPanel() {
+    const panelMinWidth = "149px";
+    const panelWidth = "15%";
+    const panelMaxWidth = "200px";
+    const leftPanel = qs(".left-panel");
+    css(leftPanel, { "width": panelWidth, "min-width": panelMinWidth, "max-width": panelMaxWidth });
+    const leftSpacer = qs(".left-spacer");
+    css(leftSpacer, { "display": "block", "width": panelWidth, "min-width": panelMinWidth, "max-width": panelMaxWidth });
+    const rightSpacer = leftSpacer.cloneNode(true);
+
+    const rightPanel = createEl("div", {
+        style: {
+            position: "fixed",
+            right: "0",
+            bottom: "0",
+            top: "100px",
+            height: "100%",
+            display: "table-cell",
+            width: panelWidth,
+            "min-width": panelMinWidth,
+            "max-width": panelMaxWidth,
+            "border-style": "solid",
+            "border-width": "0 0 0 2px",
+            "border-color": colors.black,
+            "z-index": "80",
+            background: colors.darkGray,
+        },
+    });
+
+    addPanelLabel(rightPanel, "AREAS");
+
+    qsa(".menu-label").forEach((label) => css(label, { color: colors.lightGray }));
+    css(qsa(".left-panel>ul")[1], { "padding-bottom": "0" });
+
+    const sidebarLinks = qsa(".left-panel>ul>li>a");
+    sidebarLinks
+        .filter((link) => startsWithAny(link.innerHTML, RIGHT_PANEL_AREAS))
+        .forEach((link) => moveLinkIntoPanel(rightPanel, link));
+
+    addPanelLabel(rightPanel, "INFO");
+    sidebarLinks
+        .filter((link) => startsWithAny(link.innerHTML, RIGHT_PANEL_INFO))
+        .forEach((link) => moveLinkIntoPanel(rightPanel, link));
+
+    // Extra shortcuts.
+    moveLinkIntoPanel(rightPanel, createEl("a", {
+        href: "game.php?sr=197&cmd=gathering&do=board&board=13",
+        innerHTML: "Gang Boards",
+    }));
+    moveLinkIntoPanel(rightPanel, createEl("a", {
+        href: "game.php?sr=115&cmd=active",
+        innerHTML: "Players Online",
+    }));
+
+    const container = qs(".container");
+    container.append(rightSpacer);
+    container.append(rightPanel);
+}
+
+function addSettingsButton(parent, href, icon) {
+    const button = createEl("a", {
+        href,
+        className: "topbar-settings-button",
+        innerHTML: icon,
+        style: {
+            padding: "8px",
+            margin: "auto 0",
+            display: "flex",
+            "align-items": "center",
+            color: `${colors.orange} !important`,
+        },
+    });
+    addNavHover(button, { withBadge: false });
+    css(qs("svg", button), { width: "24px", height: "24px" });
+    parent.append(button);
+}
+
+function buildTopbarSettings() {
+    const topbar = qs(".topbar-menu");
+    css(topbar, { display: "flex", "align-items": "center", "justify-content": "space-between" });
+
+    const settings = createEl("div", {
+        className: "topbar-settings",
+        style: { display: "flex", "align-items": "center", "margin-right": "40px", height: "100%" },
+    });
+    topbar.append(settings);
+
+    addSettingsButton(settings, "game.php?sr=197&cmd=preferences", icons.gearFill);
+    addSettingsButton(settings, "//wiki.hobowars.com/index.php?title=Main_Page", icons.questionDiamondFill);
+    addSettingsButton(settings, "game.php?sr=197&cmd=logout", icons.doorClosedFill);
+
+    const spacerLeft = createEl("div", {
+        className: "topbar-spacer-left",
+        style: { width: "120px", "margin-left": "40px", height: "100%" },
+    });
+    topbar.prepend(spacerLeft);
+}
+
+function resizeTopbar() {
+    const topbar = qs(".topbar");
+    const topbarMenu = qs(".topbar-menu");
+    const currency = qs(".currency");
+    const container = qs(".container");
+    const leftPanel = qs(".left-panel");
+
+    document.body.append(currency);
+
+    css(topbar, {
+        top: "0",
+        height: "40px",
+        display: "flex",
+        "align-items": "center",
+        "border-style": "solid",
+        "border-width": "0 0 1px 0",
+        "border-color": colors.black,
+    });
+
+    css(currency, {
+        top: "40px",
+        left: "0",
+        right: "0",
+        margin: "0",
+        height: "20px",
+        width: "100%",
+        position: "fixed",
+        background: colors.darkGray,
+        "z-index": "100",
+        padding: "4px",
+        "border-style": "solid",
+        "border-width": "0 0 1px 0",
+        "border-color": colors.black,
+        display: "flex",
+        "align-items": "center",
+    });
+
+    css(topbarMenu, {
+        top: "60px",
+        height: "40px",
+        "border-style": "solid",
+        "border-width": "0 0 2px 0",
+        "border-color": colors.black,
+    });
+
+    // Add a Backpack shortcut to the start of the top-bar menu.
+    const backpackItem = createEl("li");
+    backpackItem.prepend(createEl("a", {
+        href: "https://www.hobowars.com/game/game.php?sr=112&cmd=backpack",
+        innerText: "Backpack",
+    }));
+    qs("ul", topbarMenu).prepend(backpackItem);
+
+    css(container, { "padding-top": "100px" });
+    css(leftPanel, { top: "100px" });
+}
+
+/* =============================================================================
+ * FEATURES
+ * Gameplay-specific helpers: map cleanup, hitlist, RPSLS, university grid,
+ * and rankings.
+ * ========================================================================== */
+
+// --- Map cleanup: strip background images so solid tile colors show --------
+
+const MAP_TABLE_SELECTOR = "table[cellspacing='0'][cellpadding='0'][bgcolor='#000000']";
+const MAP_TILE_SELECTOR = "td[bgcolor]";
+
+let isApplyingMapFix = false;
+let mapFixObserver = null;
+let mapFixStyleElement = null;
+let mapFixScheduled = false;
+
+function isTargetMapTable(table) {
+    if (!(table instanceof HTMLTableElement)) {
+        return false;
+    }
+
+    const tiles = qsa(MAP_TILE_SELECTOR, table);
+    if (tiles.length < 100) {
+        return false;
+    }
+
+    return tiles.some((tile) => tile.title === "You!" || /^\d+,\s*\d+$/.test(tile.title ?? ""));
+}
+
+function ensureMapFixStyle() {
+    if (!mapFixStyleElement) {
+        mapFixStyleElement = createEl("style", { id: "hobowars-map-fix-style" });
+        document.head.append(mapFixStyleElement);
+    }
+    return mapFixStyleElement;
+}
+
+function updateMapFixStyles(table) {
+    const colorsOnMap = new Set(
+        qsa(MAP_TILE_SELECTOR, table)
+            .map((tile) => tile.getAttribute("bgcolor")?.toUpperCase())
+            .filter(Boolean)
+    );
+
+    const rules = ["table[data-hw-map-fix='active'] td { background-image: none !important; }"];
+    colorsOnMap.forEach((color) => {
+        rules.push(
+            `table[data-hw-map-fix='active'] td[bgcolor='${color}'] {` +
+            `background: ${color} !important; background-color: ${color} !important; }`
+        );
+    });
+
+    ensureMapFixStyle().textContent = rules.join("\n");
+}
+
+function restoreMapTile(tile) {
+    const color = tile.getAttribute("bgcolor");
+    if (!color) {
+        return;
+    }
+
+    tile.bgColor = color;
+    tile.setAttribute("bgcolor", color);
+    css(tile, {
+        background: `${color} !important`,
+        "background-color": `${color} !important`,
+        "background-image": "none !important",
+        "background-repeat": "repeat !important",
+        padding: "0 !important",
+        "line-height": "0 !important",
+        "font-size": "0 !important",
+        overflow: "hidden !important",
+    });
+
+    const width = tile.getAttribute("width");
+    if (width) {
+        css(tile, {
+            width: `${width}px !important`,
+            "min-width": `${width}px !important`,
+            "max-width": `${width}px !important`,
+        });
+    }
+
+    const height = tile.getAttribute("height");
+    if (height) {
+        css(tile, {
+            height: `${height}px !important`,
+            "min-height": `${height}px !important`,
+            "max-height": `${height}px !important`,
+        });
+    }
+
+    const { borderColor, borderWidth, borderStyle } = tile.style;
+    if (borderColor) {
+        css(tile, { "border-color": `${borderColor} !important` });
+    }
+    if (borderWidth) {
+        css(tile, { "border-width": `${borderWidth} !important` });
+    }
+    if (borderStyle) {
+        css(tile, { "border-style": `${borderStyle} !important` });
+    }
+}
+
+function restoreMap(table) {
+    table.setAttribute("data-hw-map-fix", "active");
+    updateMapFixStyles(table);
+    qsa(MAP_TILE_SELECTOR, table).forEach(restoreMapTile);
+}
+
+function scheduleMapFix() {
+    if (mapFixScheduled || isApplyingMapFix) {
+        return;
+    }
+
+    mapFixScheduled = true;
+    window.requestAnimationFrame(() => {
+        mapFixScheduled = false;
+        if (!isApplyingMapFix) {
+            applyMapFix();
+        }
+    });
+}
+
+function ensureMapFixObserver(table) {
+    if (!enhanceMaps || !(table instanceof HTMLTableElement)) {
+        return;
+    }
+
+    if (mapFixObserver) {
+        mapFixObserver.disconnect();
+    }
+
+    mapFixObserver = new MutationObserver(scheduleMapFix);
+    mapFixObserver.observe(table, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["style", "bgcolor", "class"],
+    });
+}
+
+function applyMapFix() {
+    if (!enhanceMaps || isApplyingMapFix) {
+        return;
+    }
+
+    isApplyingMapFix = true;
+    try {
+        let activeMapTable = null;
+        qsa(MAP_TABLE_SELECTOR).forEach((table) => {
+            if (isTargetMapTable(table)) {
+                activeMapTable = table;
+                restoreMap(table);
+            }
+        });
+
+        if (activeMapTable) {
+            ensureMapFixObserver(activeMapTable);
+        }
+    } finally {
+        isApplyingMapFix = false;
+    }
+}
+
+// --- Hitlist: collapse notes and hide low-value targets --------------------
+function enhanceHitlistTable() {
+    if (!enhanceHitlist) {
+        return;
+    }
+
+    const myCitySide = "West";
+    const rows = qsa("#hitlist tr");
+    css(qs("#area"), { display: "none" });
+
+    rows.forEach((row, index) => {
+        const cells = qsa("td", row);
+
+        // Hide Battle count, Alive, and the unused column.
+        css(cells[6], { display: "none" });
+        css(cells[5], { display: "none" });
+        css(cells[2], { display: "none" });
+
+        if (index === 0) {
+            return;
+        }
+
+        const sameSide = cells[4].querySelector("div>b>font").innerHTML === myCitySide;
+        const noteEl = cells[1].querySelector("div>font");
+        const noteParts = noteEl.innerHTML.split(" | ");
+
+        let gangPart = null;
+        let hitsPart = null;
+        let otherSideExpPart = null;
+        let sameSideExpPart = null;
+        noteParts.forEach((part) => {
+            if (part.startsWith("[G")) {
+                gangPart = part;
+            }
+            if (part.startsWith("[H")) {
+                hitsPart = part;
+            } else if (part.startsWith("[D")) {
+                otherSideExpPart = part;
+            } else if (part.startsWith("[S")) {
+                sameSideExpPart = part;
+            }
+        });
+
+        const gangPrefix = gangPart ? `<span style='color: green; font-weight: bold'>${gangPart}</span> ` : "";
+        const requiredHits = hitsPart ? hitsPart[3] : 1;
+        const currentExpPart = sameSide ? (sameSideExpPart ?? "???") : (otherSideExpPart ?? "???");
+        const currentExp = currentExpPart.replace(",", "").replace("k", "").substring(6);
+        const resultExp = currentExp / requiredHits;
+
+        noteEl.innerHTML = `${gangPrefix}${resultExp}k (${requiredHits})`;
+        if (requiredHits > 1) {
+            css(noteEl, { color: colors.red });
+        }
+        if (resultExp < hitlistThreshold) {
+            css(row, { display: "none" });
+        }
+    });
+}
+
+// --- RPSLS: highlight the winning choice -----------------------------------
+function solveRPSLS() {
+    const contentArea = qs(".content-area");
+    const text = contentArea.innerText;
+    const isRPSLS =
+        text.includes("You nod your head and Johnson sticks his fist in his palm.") ||
+        text.includes("You stare the bald hobo straight in the eyes as you steel yourself mentally");
+    if (!isRPSLS) {
+        return;
+    }
+
+    const links = qsa("a", contentArea);
+    let correctIndex = 0;
+    if (text.includes("tongue")) {
+        correctIndex = 0;
+    } else if (text.includes("feet")) {
+        correctIndex = 1;
+    } else if (text.includes("You notice the bald guy tucking his thumb inside his fist")) {
+        correctIndex = 2;
+    } else if (text.includes("ear")) {
+        correctIndex = 3;
+    } else if (text.includes("You notice the bald guy crossing his eyes a little bit")) {
+        correctIndex = 4;
+    }
+
+    css(links[correctIndex], { color: `${colors.red} !important` });
+}
+
+// --- University grid: brute-force the best row/column rotations ------------
+const uniGrid = [[], [], [], []];
+
+function enhanceUniGrid() {
+    const rows = qsa(".uni table tr");
+    if (rows.length === 0) {
+        return;
+    }
+
+    for (let i = 1; i < rows.length; i++) {
+        const cells = qsa("td", rows[i]);
+        for (let j = 1; j < cells.length; j++) {
+            uniGrid[i - 1][j - 1] = qs("div", cells[j]).innerHTML;
+        }
+    }
+
+    const { rowRotations, colRotations } = solveUniGrid(uniGrid);
+    const highlight = (node, active) => css(node, { background: active ? `${colors.red} !important` : null });
+
+    const columnRotators = qsa("td>a>div", rows[0]);
+    colRotations.forEach((rotation, index) => highlight(columnRotators[index], rotation > 0));
+
+    for (let i = 1; i <= 4; i++) {
+        highlight(qs("td>a>div", rows[i]), rowRotations[i - 1] > 0);
+    }
+}
+
+function solveUniGrid(originalGrid) {
+    const N = 4;
+    const realToMod = { "-1": 2, "0": 0, "1": 1 };
+    const modToReal = [0, 1, -1];
+    const grid = originalGrid.map((row) => row.map((v) => realToMod[v]));
+
+    let bestScore = -Infinity;
+    let best = { rowRotations: [], colRotations: [] };
+
+    for (let r0 = 0; r0 < 3; r0++) {
+        for (let r1 = 0; r1 < 3; r1++) {
+            for (let r2 = 0; r2 < 3; r2++) {
+                for (let r3 = 0; r3 < 3; r3++) {
+                    const rowRotations = [r0, r1, r2, r3];
+
+                    for (let c0 = 0; c0 < 3; c0++) {
+                        for (let c1 = 0; c1 < 3; c1++) {
+                            for (let c2 = 0; c2 < 3; c2++) {
+                                for (let c3 = 0; c3 < 3; c3++) {
+                                    const colRotations = [c0, c1, c2, c3];
+
+                                    let total = 0;
+                                    for (let i = 0; i < N; i++) {
+                                        for (let j = 0; j < N; j++) {
+                                            total += modToReal[(grid[i][j] + rowRotations[i] + colRotations[j]) % 3];
+                                        }
+                                    }
+
+                                    if (total > bestScore) {
+                                        bestScore = total;
+                                        best = {
+                                            rowRotations: [...rowRotations],
+                                            colRotations: [...colRotations],
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return best;
+}
+
+// --- Rankings: trim the list and hide players below the level threshold ----
+function enhanceRankingsTable() {
+    if (!enhanceRankings) {
+        return;
+    }
+
+    const heading = qsa("h3").find((h) => h.innerText?.trim() === "Hobo Rankings");
+    const table = heading?.nextElementSibling;
+    if (!table || table.tagName !== "TABLE") {
+        return;
+    }
+
+    const fromInput = table.querySelector("input[name='s_rank']");
+    const currentValue = Number.parseInt(fromInput?.value ?? "", 10);
+    if (fromInput && !Number.isNaN(currentValue)) {
+        fromInput.value = String(Math.max(0, currentValue - 41));
+    }
+
+    qsa("tr", table).forEach((row) => {
+        const cells = qsa("td", row);
+        if (cells.length < 5) {
+            return;
+        }
+
+        const level = Number.parseInt(cells[2].querySelector("center")?.innerText?.trim() ?? "", 10);
+        if (!Number.isNaN(level) && level < rankingThreshold) {
+            css(row, { display: "none" });
+        }
+    });
+}
+function hideShopItemsByName() {
+    qsa("tr").forEach((row) => {
+        const rowText = row.textContent?.replace(/\s+/g, " ").trim();
+        if (!rowText) {
+            return;
+        }
+
+        for (const itemName of hiddenShopItemNames) {
+            if (rowText.includes(itemName)) {
+                css(row, { display: "none" });
+                break;
+            }
+        }
+    });
+}
+
+/* =============================================================================
+ * BOOTSTRAP
+ * ========================================================================== */
+
+function enhanceCommonLayout() {
+    relocateStats();
+    relocateResources();
+    relocateTopbarMenu();
+    hideClutter();
+    buildRightPanel();
+    resizeTopbar();
+    buildTopbarSettings();
+    styleNavigationMenus();
+    enhanceHitlistTable();
+    hideShopItemsByName();
+    applyMapFix();
+    solveRPSLS();
+}
+
+function main() {
+    applyDarkMode();
+    enhanceCommonLayout();
+    enhanceRankingsTable();
+    enhanceUniGrid();
+}
+
+main();

@@ -7,11 +7,21 @@ $outputFileName = "tampermonkey-script-$timestamp.js"
 $outputPath = Join-Path $artifactsDirectory $outputFileName
 $sourceFiles = @(
     'src/meta/header.js'
-    'src/core/shared.js'
+    'src/config/flags.js'
+    'src/config/colors.js'
+    'src/features/swimming.js'
+    'src/config/icons.js'
+    'src/config/navigation-data.js'
+    'src/core/page-context.js'
     'src/core/utilities.js'
     'src/theme/dark-mode.js'
     'src/layout/layout.js'
-    'src/features/gameplay.js'
+    'src/features/maps.js'
+    'src/features/hitlist.js'
+    'src/features/rpsls.js'
+    'src/features/uni-grid.js'
+    'src/features/rankings.js'
+    'src/features/shop.js'
     'src/bootstrap/main.js'
 )
 
