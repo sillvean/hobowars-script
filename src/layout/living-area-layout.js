@@ -1,16 +1,4 @@
-function layoutLivingArea() {
-    const gearInfo = qs("#gearInfo");
-    if (!gearInfo) {
-        return;
-    }
-
-    const contentAreaTable = qs(".content-area > table");
-    const contentAreaTopCell = qs(".content-area > table td[valign='top']");
-    const tattoo = qs("#tattooImg");
-    const accountLinksList = qs("ul.more_info.nofloat.statsDisplay");
-    const referredLink = accountLinksList?.querySelector("a[href*='cmd=referred']")?.closest("li");
-    const newsHeader = findLivingAreaNewsHeader();
-
+function styleLivingAreaShell({ contentAreaTable, contentAreaTopCell, tattoo }) {
     if (contentAreaTable) {
         css(contentAreaTable, {
             border: "0 !important",
@@ -27,15 +15,30 @@ function layoutLivingArea() {
     if (tattoo) {
         css(tattoo, { right: "150px" });
     }
+}
 
-    if (accountLinksList && referredLink && !accountLinksList.querySelector("a[href*='cmd=rfriend']")) {
-        const referItem = createEl("li", { className: "nofloat" });
-        referItem.appendChild(createEl("a", { href: "game.php?sr=154&cmd=rfriend", textContent: "Refer" }));
-        accountLinksList.insertBefore(referItem, referredLink);
+function ensureLivingAreaReferLink({ accountLinksList, referredLink }) {
+    if (!accountLinksList || !referredLink || accountLinksList.querySelector("a[href*='cmd=rfriend']")) {
+        return;
     }
 
-    const newsPanel = newsHeader?.nextElementSibling;
+    const referItem = createEl("li", { className: "nofloat" });
+    referItem.appendChild(createEl("a", { href: "game.php?sr=154&cmd=rfriend", textContent: "Refer" }));
+    accountLinksList.insertBefore(referItem, referredLink);
+}
+
+function placeLivingAreaAccountLinks({ newsPanel, accountLinksList }) {
     if (newsPanel && accountLinksList) {
         newsPanel.insertAdjacentElement("afterend", accountLinksList);
     }
+}
+
+function applyLivingAreaLayout(context = getLivingAreaContext()) {
+    if (!context.gearInfo) {
+        return;
+    }
+
+    styleLivingAreaShell(context);
+    ensureLivingAreaReferLink(context);
+    placeLivingAreaAccountLinks(context);
 }

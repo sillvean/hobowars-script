@@ -1,20 +1,21 @@
-function refreshLivingAreaEnhancements() {
+function refreshLivingArea() {
+    const context = getLivingAreaContext();
+
     if (darkMode) {
-        darkModeLivingArea();
+        applyLivingAreaTheme(context);
     }
 
-    layoutLivingArea();
-    cleanupLivingArea();
+    applyLivingAreaLayout(context);
+    applyLivingAreaCleanup(context);
 }
 
-function bindLivingAreaTabRefresh() {
+function bindLivingAreaRefresh() {
     const tabLinks = qs("#tabLinks");
     if (!tabLinks || tabLinks.dataset.hoboWarsRefreshAttached) {
         return;
     }
 
-    const scheduleLivingAreaRefresh = createRafScheduler(refreshLivingAreaEnhancements);
-
+    const scheduleLivingAreaRefresh = createRafScheduler(refreshLivingArea);
     const observer = new MutationObserver(scheduleLivingAreaRefresh);
 
     observer.observe(tabLinks, { subtree: true, attributes: true, attributeFilter: ["id"] });

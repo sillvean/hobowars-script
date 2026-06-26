@@ -153,11 +153,11 @@ The userscript is currently concatenated in this order by `build-userscript.ps1`
 
 ### `src/features/living-area-cleanup.js`
 
-- Current responsibility: Living Area content suppression, stat-line hiding, promo removal, and related cleanup.
+- Current responsibility: Internal Living Area cleanup helpers used by the Living Area owner module.
 
-### `src/features/living-area-tabs.js`
+### `src/features/living-area.js`
 
-- Current responsibility: Living Area tab mutation observation and reapplication of Living Area theme, layout, and cleanup passes.
+- Current responsibility: Public Living Area owner module that refreshes the shared context and binds tab mutation reapplication.
 
 ### `src/features/maps.js`
 

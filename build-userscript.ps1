@@ -32,7 +32,7 @@ $sourceFiles = @(
     'src/layout/topbar-resize.js'
     'src/features/section-header.js'
     'src/features/living-area-cleanup.js'
-    'src/features/living-area-tabs.js'
+    'src/features/living-area.js'
     'src/features/maps.js'
     'src/features/hitlist.js'
     'src/features/rpsls.js'

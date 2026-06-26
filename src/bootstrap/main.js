@@ -15,7 +15,7 @@ function applyLayout() {
 
 function runGlobalFeatures() {
     enhanceSwimmingTopbar();
-    bindLivingAreaTabRefresh();
+    bindLivingAreaRefresh();
     applyMapFix();
 }
 
@@ -30,9 +30,9 @@ function runPageFeatures() {
 function main() {
     applyTheme();
     applyLayout();
-    // Living Area work is order-sensitive: theme tweaks, layout changes, and
-    // cleanup all touch the same subtree and should refresh through one path.
-    refreshLivingAreaEnhancements();
+    // Living Area work is order-sensitive, so one owner module refreshes
+    // theme, layout, and cleanup from a shared DOM context.
+    refreshLivingArea();
     runGlobalFeatures();
     runPageFeatures();
 }

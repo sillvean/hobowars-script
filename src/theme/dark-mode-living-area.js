@@ -1,8 +1,4 @@
-function darkModeLivingArea() {
-    const tabLinks = qs("#tabLinks");
-    const tabLinkItems = tabLinks ? qsa("a", tabLinks) : [];
-    const selectedTabLink = qs("#tabLinks a#sel");
-
+function styleLivingAreaTabs({ tabLinkItems, selectedTabLink }) {
     tabLinkItems.forEach((tab) => css(tab, {
         "background-color": `${colors.midGray} !important`,
         color: `${colors.almostWhite} !important`,
@@ -14,52 +10,68 @@ function darkModeLivingArea() {
             color: `${colors.orange} !important`,
         });
     }
+}
 
-    const gearInfo = qs("#gearInfo");
-    if (!gearInfo) {
-        return;
-    }
-
-    const panelStyle = (el) => css(el, {
+function styleLivingAreaPanelBlock(el) {
+    return css(el, {
         "background-color": `${colors.midGray} !important`,
         color: `${colors.almostWhite} !important`,
         border: "2px",
     });
+}
 
-    panelStyle(gearInfo);
+function styleLivingAreaPanels({ gearInfo }) {
+    if (!gearInfo) {
+        return;
+    }
 
-    qsa("#gearInfo font").forEach((font) => css(font, { color: colors.almostWhite }));
-    qsa("#gearInfo>div").forEach(panelStyle);
-    qsa("#gearInfo table, #gearInfo tbody, #gearInfo tr, #gearInfo td").forEach((el) => css(el, {
+    styleLivingAreaPanelBlock(gearInfo);
+
+    qsa("font", gearInfo).forEach((font) => css(font, { color: colors.almostWhite }));
+    qsa(":scope > div", gearInfo).forEach(styleLivingAreaPanelBlock);
+    qsa("table, tbody, tr, td", gearInfo).forEach((el) => css(el, {
         "background-color": `${colors.midGray} !important`,
         color: `${colors.almostWhite} !important`,
     }));
-    panelStyle(qs(".more_info>div"));
+    styleLivingAreaPanelBlock(qs(".more_info>div"));
+}
 
-    const newsHeader = findLivingAreaNewsHeader();
-    if (newsHeader) {
-        css(newsHeader, {
-            "background-color": `${colors.darkGray} !important`,
-            color: `${colors.almostWhite} !important`,
-            border: `1px solid ${colors.orange} !important`,
-            "border-bottom": `1px solid ${colors.orange} !important`,
-        });
-        qsa("a", newsHeader).forEach((link) => css(link, { color: `${colors.orange} !important` }));
-
-        const rssIcon = qs("#rss img", newsHeader);
-        if (rssIcon) {
-            css(rssIcon, { display: "none" });
-        }
-
-        const newsPanel = newsHeader.nextElementSibling;
-        if (newsPanel) {
-            css(newsPanel, {
-                border: "0 !important",
-                outline: `1px solid ${colors.orange} !important`,
-                "outline-offset": "-1px !important",
-                "margin-top": "-1px !important",
-                "margin-bottom": "10px !important",
-            });
-        }
+function styleLivingAreaNews({ newsHeader, newsPanel }) {
+    if (!newsHeader) {
+        return;
     }
+
+    css(newsHeader, {
+        "background-color": `${colors.darkGray} !important`,
+        color: `${colors.almostWhite} !important`,
+        border: `1px solid ${colors.orange} !important`,
+        "border-bottom": `1px solid ${colors.orange} !important`,
+    });
+    qsa("a", newsHeader).forEach((link) => css(link, { color: `${colors.orange} !important` }));
+
+    const rssIcon = qs("#rss img", newsHeader);
+    if (rssIcon) {
+        css(rssIcon, { display: "none" });
+    }
+
+    if (newsPanel) {
+        css(newsPanel, {
+            border: "0 !important",
+            outline: `1px solid ${colors.orange} !important`,
+            "outline-offset": "-1px !important",
+            "margin-top": "-1px !important",
+            "margin-bottom": "10px !important",
+        });
+    }
+}
+
+function applyLivingAreaTheme(context = getLivingAreaContext()) {
+    styleLivingAreaTabs(context);
+
+    if (!context.gearInfo) {
+        return;
+    }
+
+    styleLivingAreaPanels(context);
+    styleLivingAreaNews(context);
 }

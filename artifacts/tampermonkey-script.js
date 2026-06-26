@@ -488,6 +488,27 @@ function findLivingAreaNewsHeader(root = document) {
     return qsa("div[style*='height:25px']", root).find((el) => el.textContent?.includes("News"));
 }
 
+function getLivingAreaContext() {
+    const tabLinks = qs("#tabLinks");
+    const gearInfo = qs("#gearInfo");
+    const newsHeader = findLivingAreaNewsHeader();
+    const accountLinksList = qs("ul.more_info.nofloat.statsDisplay");
+
+    return {
+        tabLinks,
+        tabLinkItems: tabLinks ? qsa("a", tabLinks) : [],
+        selectedTabLink: qs("#tabLinks a#sel"),
+        gearInfo,
+        newsHeader,
+        newsPanel: newsHeader?.nextElementSibling ?? null,
+        contentAreaTable: qs(".content-area > table"),
+        contentAreaTopCell: qs(".content-area > table td[valign='top']"),
+        tattoo: qs("#tattooImg"),
+        accountLinksList,
+        referredLink: accountLinksList?.querySelector("a[href*='cmd=referred']")?.closest("li") ?? null,
+    };
+}
+
 function createRafScheduler(callback) {
     let scheduled = false;
 
@@ -553,11 +574,7 @@ function darkModeButtons() {
     qsa("a.btn").forEach((btn) => css(btn, { background: colors.darkGray, color: colors.orange }));
 }
 
-function darkModeLivingArea() {
-    const tabLinks = qs("#tabLinks");
-    const tabLinkItems = tabLinks ? qsa("a", tabLinks) : [];
-    const selectedTabLink = qs("#tabLinks a#sel");
-
+function styleLivingAreaTabs({ tabLinkItems, selectedTabLink }) {
     tabLinkItems.forEach((tab) => css(tab, {
         "background-color": `${colors.midGray} !important`,
         color: `${colors.almostWhite} !important`,
@@ -569,54 +586,70 @@ function darkModeLivingArea() {
             color: `${colors.orange} !important`,
         });
     }
+}
 
-    const gearInfo = qs("#gearInfo");
-    if (!gearInfo) {
-        return;
-    }
-
-    const panelStyle = (el) => css(el, {
+function styleLivingAreaPanelBlock(el) {
+    return css(el, {
         "background-color": `${colors.midGray} !important`,
         color: `${colors.almostWhite} !important`,
         border: "2px",
     });
+}
 
-    panelStyle(gearInfo);
+function styleLivingAreaPanels({ gearInfo }) {
+    if (!gearInfo) {
+        return;
+    }
 
-    qsa("#gearInfo font").forEach((font) => css(font, { color: colors.almostWhite }));
-    qsa("#gearInfo>div").forEach(panelStyle);
-    qsa("#gearInfo table, #gearInfo tbody, #gearInfo tr, #gearInfo td").forEach((el) => css(el, {
+    styleLivingAreaPanelBlock(gearInfo);
+
+    qsa("font", gearInfo).forEach((font) => css(font, { color: colors.almostWhite }));
+    qsa(":scope > div", gearInfo).forEach(styleLivingAreaPanelBlock);
+    qsa("table, tbody, tr, td", gearInfo).forEach((el) => css(el, {
         "background-color": `${colors.midGray} !important`,
         color: `${colors.almostWhite} !important`,
     }));
-    panelStyle(qs(".more_info>div"));
+    styleLivingAreaPanelBlock(qs(".more_info>div"));
+}
 
-    const newsHeader = findLivingAreaNewsHeader();
-    if (newsHeader) {
-        css(newsHeader, {
-            "background-color": `${colors.darkGray} !important`,
-            color: `${colors.almostWhite} !important`,
-            border: `1px solid ${colors.orange} !important`,
-            "border-bottom": `1px solid ${colors.orange} !important`,
-        });
-        qsa("a", newsHeader).forEach((link) => css(link, { color: `${colors.orange} !important` }));
-
-        const rssIcon = qs("#rss img", newsHeader);
-        if (rssIcon) {
-            css(rssIcon, { display: "none" });
-        }
-
-        const newsPanel = newsHeader.nextElementSibling;
-        if (newsPanel) {
-            css(newsPanel, {
-                border: "0 !important",
-                outline: `1px solid ${colors.orange} !important`,
-                "outline-offset": "-1px !important",
-                "margin-top": "-1px !important",
-                "margin-bottom": "10px !important",
-            });
-        }
+function styleLivingAreaNews({ newsHeader, newsPanel }) {
+    if (!newsHeader) {
+        return;
     }
+
+    css(newsHeader, {
+        "background-color": `${colors.darkGray} !important`,
+        color: `${colors.almostWhite} !important`,
+        border: `1px solid ${colors.orange} !important`,
+        "border-bottom": `1px solid ${colors.orange} !important`,
+    });
+    qsa("a", newsHeader).forEach((link) => css(link, { color: `${colors.orange} !important` }));
+
+    const rssIcon = qs("#rss img", newsHeader);
+    if (rssIcon) {
+        css(rssIcon, { display: "none" });
+    }
+
+    if (newsPanel) {
+        css(newsPanel, {
+            border: "0 !important",
+            outline: `1px solid ${colors.orange} !important`,
+            "outline-offset": "-1px !important",
+            "margin-top": "-1px !important",
+            "margin-bottom": "10px !important",
+        });
+    }
+}
+
+function applyLivingAreaTheme(context = getLivingAreaContext()) {
+    styleLivingAreaTabs(context);
+
+    if (!context.gearInfo) {
+        return;
+    }
+
+    styleLivingAreaPanels(context);
+    styleLivingAreaNews(context);
 }
 
 function darkModeShop() {
@@ -644,19 +677,7 @@ function applyDarkMode() {
  * go, not the color values.
  * ========================================================================== */
 
-function layoutLivingArea() {
-    const gearInfo = qs("#gearInfo");
-    if (!gearInfo) {
-        return;
-    }
-
-    const contentAreaTable = qs(".content-area > table");
-    const contentAreaTopCell = qs(".content-area > table td[valign='top']");
-    const tattoo = qs("#tattooImg");
-    const accountLinksList = qs("ul.more_info.nofloat.statsDisplay");
-    const referredLink = accountLinksList?.querySelector("a[href*='cmd=referred']")?.closest("li");
-    const newsHeader = findLivingAreaNewsHeader();
-
+function styleLivingAreaShell({ contentAreaTable, contentAreaTopCell, tattoo }) {
     if (contentAreaTable) {
         css(contentAreaTable, {
             border: "0 !important",
@@ -673,17 +694,32 @@ function layoutLivingArea() {
     if (tattoo) {
         css(tattoo, { right: "150px" });
     }
+}
 
-    if (accountLinksList && referredLink && !accountLinksList.querySelector("a[href*='cmd=rfriend']")) {
-        const referItem = createEl("li", { className: "nofloat" });
-        referItem.appendChild(createEl("a", { href: "game.php?sr=154&cmd=rfriend", textContent: "Refer" }));
-        accountLinksList.insertBefore(referItem, referredLink);
+function ensureLivingAreaReferLink({ accountLinksList, referredLink }) {
+    if (!accountLinksList || !referredLink || accountLinksList.querySelector("a[href*='cmd=rfriend']")) {
+        return;
     }
 
-    const newsPanel = newsHeader?.nextElementSibling;
+    const referItem = createEl("li", { className: "nofloat" });
+    referItem.appendChild(createEl("a", { href: "game.php?sr=154&cmd=rfriend", textContent: "Refer" }));
+    accountLinksList.insertBefore(referItem, referredLink);
+}
+
+function placeLivingAreaAccountLinks({ newsPanel, accountLinksList }) {
     if (newsPanel && accountLinksList) {
         newsPanel.insertAdjacentElement("afterend", accountLinksList);
     }
+}
+
+function applyLivingAreaLayout(context = getLivingAreaContext()) {
+    if (!context.gearInfo) {
+        return;
+    }
+
+    styleLivingAreaShell(context);
+    ensureLivingAreaReferLink(context);
+    placeLivingAreaAccountLinks(context);
 }
 
 function addPanelLabel(panel, title) {
@@ -1165,59 +1201,65 @@ function resizeTopbar() {
  * and rankings.
  * ========================================================================== */
 
-function cleanupLivingArea() {
-    const gearInfo = qs("#gearInfo");
-    if (!gearInfo) {
-        return;
+function hideLivingAreaLineByLabel(containerSelector, labelText) {
+    const line = qsa(`${containerSelector} .line`).find(
+        (el) => el.querySelector("span")?.textContent?.trim() === labelText
+    );
+    if (line) {
+        css(line, { display: "none" });
     }
+}
 
-    const hideLineByLabel = (containerSelector, labelText) => {
-        const line = qsa(`${containerSelector} .line`).find(
-            (el) => el.querySelector("span")?.textContent?.trim() === labelText
-        );
-        if (line) {
-            css(line, { display: "none" });
-        }
-    };
-
+function hideLivingAreaArenaLine() {
     const arenaLine = qs("#battleRecord input[name='playArena']")?.closest(".line");
     if (arenaLine) {
         css(arenaLine, { display: "none" });
     }
+}
 
+function hideLivingAreaMailForm() {
     const mailForm = qs("form[action*='cmd=mail'][action*='do=delsel']");
-    if (mailForm) {
-        if (mailForm.previousElementSibling) {
-            css(mailForm.previousElementSibling, { display: "none" });
-        }
-        css(mailForm, { display: "none" });
+    if (!mailForm) {
+        return;
     }
 
-    const newsHeader = findLivingAreaNewsHeader();
+    if (mailForm.previousElementSibling) {
+        css(mailForm.previousElementSibling, { display: "none" });
+    }
+    css(mailForm, { display: "none" });
+}
+
+function removeLivingAreaInvitePromo({ newsHeader }) {
     const invitePromoLink = qsa("a[href*='cmd=rfriend']").find((link) => link.textContent?.trim() === "Click Here");
-    if (invitePromoLink) {
-        let promoStart = invitePromoLink;
-        while (promoStart.previousSibling) {
-            promoStart = promoStart.previousSibling;
-            if (
-                promoStart.nodeType === Node.ELEMENT_NODE &&
-                promoStart.matches("div[style*='margin-left:20px']") &&
-                promoStart.querySelector("img")
-            ) {
-                break;
-            }
-        }
+    if (!invitePromoLink) {
+        return;
+    }
 
-        if (newsHeader) {
-            let sibling = promoStart;
-            while (sibling && sibling !== newsHeader) {
-                const next = sibling.nextSibling;
-                sibling.remove?.();
-                sibling = next;
-            }
+    let promoStart = invitePromoLink;
+    while (promoStart.previousSibling) {
+        promoStart = promoStart.previousSibling;
+        if (
+            promoStart.nodeType === Node.ELEMENT_NODE &&
+            promoStart.matches("div[style*='margin-left:20px']") &&
+            promoStart.querySelector("img")
+        ) {
+            break;
         }
     }
 
+    if (!newsHeader) {
+        return;
+    }
+
+    let sibling = promoStart;
+    while (sibling && sibling !== newsHeader) {
+        const next = sibling.nextSibling;
+        sibling.remove?.();
+        sibling = next;
+    }
+}
+
+function cleanupLivingAreaAccountLinks() {
     qsa("ul.nofloat li.nofloat, ul.nofloat li").forEach((item) => {
         const text = item.textContent || "";
 
@@ -1232,7 +1274,9 @@ function cleanupLivingArea() {
             css(item, { display: "none" });
         }
     });
+}
 
+function hideLivingAreaStatLines() {
     [
         ["#generalDisplay", "Name:"],
         ["#generalDisplay", "Gang:"],
@@ -1253,31 +1297,47 @@ function cleanupLivingArea() {
         ["#resourcesDisplay", "Tokens:"],
         ["#personalInfo", "Gender:"],
         ["#personalInfo", "Spouse:"],
-    ].forEach(([selector, label]) => hideLineByLabel(selector, label));
+    ].forEach(([selector, label]) => hideLivingAreaLineByLabel(selector, label));
+}
 
+function hideLivingAreaDrinkingStats() {
     const drinkingStats = qs("#drinkingStats");
     if (drinkingStats) {
         css(drinkingStats, { display: "none" });
     }
 }
 
-function refreshLivingAreaEnhancements() {
-    if (darkMode) {
-        darkModeLivingArea();
+function applyLivingAreaCleanup(context = getLivingAreaContext()) {
+    if (!context.gearInfo) {
+        return;
     }
 
-    layoutLivingArea();
-    cleanupLivingArea();
+    hideLivingAreaArenaLine();
+    hideLivingAreaMailForm();
+    removeLivingAreaInvitePromo(context);
+    cleanupLivingAreaAccountLinks();
+    hideLivingAreaStatLines();
+    hideLivingAreaDrinkingStats();
 }
 
-function bindLivingAreaTabRefresh() {
+function refreshLivingArea() {
+    const context = getLivingAreaContext();
+
+    if (darkMode) {
+        applyLivingAreaTheme(context);
+    }
+
+    applyLivingAreaLayout(context);
+    applyLivingAreaCleanup(context);
+}
+
+function bindLivingAreaRefresh() {
     const tabLinks = qs("#tabLinks");
     if (!tabLinks || tabLinks.dataset.hoboWarsRefreshAttached) {
         return;
     }
 
-    const scheduleLivingAreaRefresh = createRafScheduler(refreshLivingAreaEnhancements);
-
+    const scheduleLivingAreaRefresh = createRafScheduler(refreshLivingArea);
     const observer = new MutationObserver(scheduleLivingAreaRefresh);
 
     observer.observe(tabLinks, { subtree: true, attributes: true, attributeFilter: ["id"] });
@@ -1804,7 +1864,7 @@ function applyLayout() {
 
 function runGlobalFeatures() {
     enhanceSwimmingTopbar();
-    bindLivingAreaTabRefresh();
+    bindLivingAreaRefresh();
     applyMapFix();
 }
 
@@ -1819,9 +1879,9 @@ function runPageFeatures() {
 function main() {
     applyTheme();
     applyLayout();
-    // Living Area work is order-sensitive: theme tweaks, layout changes, and
-    // cleanup all touch the same subtree and should refresh through one path.
-    refreshLivingAreaEnhancements();
+    // Living Area work is order-sensitive, so one owner module refreshes
+    // theme, layout, and cleanup from a shared DOM context.
+    refreshLivingArea();
     runGlobalFeatures();
     runPageFeatures();
 }

@@ -47,6 +47,27 @@ function findLivingAreaNewsHeader(root = document) {
     return qsa("div[style*='height:25px']", root).find((el) => el.textContent?.includes("News"));
 }
 
+function getLivingAreaContext() {
+    const tabLinks = qs("#tabLinks");
+    const gearInfo = qs("#gearInfo");
+    const newsHeader = findLivingAreaNewsHeader();
+    const accountLinksList = qs("ul.more_info.nofloat.statsDisplay");
+
+    return {
+        tabLinks,
+        tabLinkItems: tabLinks ? qsa("a", tabLinks) : [],
+        selectedTabLink: qs("#tabLinks a#sel"),
+        gearInfo,
+        newsHeader,
+        newsPanel: newsHeader?.nextElementSibling ?? null,
+        contentAreaTable: qs(".content-area > table"),
+        contentAreaTopCell: qs(".content-area > table td[valign='top']"),
+        tattoo: qs("#tattooImg"),
+        accountLinksList,
+        referredLink: accountLinksList?.querySelector("a[href*='cmd=referred']")?.closest("li") ?? null,
+    };
+}
+
 function createRafScheduler(callback) {
     let scheduled = false;
 
