@@ -1,8 +1,7 @@
-# Source File Responsibilities
+# Source Module Index
 
-This document records what each file under `src/` currently does, and whether that responsibility matches the file's folder and name.
-
-Seed script note: `src/seed/tampermonkey-script-seed.js` is intentionally excluded from this review because it is the historical monolith reference rather than part of the split-source concern map.
+This file is the project-structure overview for the split-source userscript.
+Use it as an index of the modules under `src/` and their current responsibility.
 
 ## Build Order
 
@@ -24,221 +23,177 @@ The userscript is currently concatenated in this order by `build-userscript.ps1`
 14. `src/theme/dark-mode-shop.js`
 15. `src/theme/apply-dark-mode.js`
 16. `src/layout/section-header.js`
-17. `src/layout/topbar-layout.js`
-18. `src/layout/navigation.js`
-19. `src/layout/right-panel.js`
-20. `src/layout/topbar-settings.js`
-21. `src/layout/topbar-resize.js`
-22. `src/features/section-header.js`
-23. `src/features/maps.js`
-24. `src/features/hitlist.js`
-25. `src/features/rpsls.js`
-26. `src/features/uni-grid.js`
-27. `src/features/rankings.js`
-28. `src/features/shop.js`
-29. `src/bootstrap/section-header.js`
-30. `src/bootstrap/main.js`
+17. `src/layout/living-area-layout.js`
+18. `src/layout/topbar-layout.js`
+19. `src/layout/navigation.js`
+20. `src/layout/right-panel.js`
+21. `src/layout/topbar-settings.js`
+22. `src/layout/topbar-resize.js`
+23. `src/features/section-header.js`
+24. `src/features/living-area-cleanup.js`
+25. `src/features/living-area-tabs.js`
+26. `src/features/maps.js`
+27. `src/features/hitlist.js`
+28. `src/features/rpsls.js`
+29. `src/features/uni-grid.js`
+30. `src/features/rankings.js`
+31. `src/features/shop.js`
+32. `src/features/swimming-topbar.js`
+33. `src/bootstrap/section-header.js`
+34. `src/bootstrap/main.js`
 
 ## Meta
 
 ### `src/meta/header.js`
 
 - Current responsibility: Tampermonkey metadata header.
-- Concern fit: Correct.
-- Notes: Pure userscript metadata; no application behavior.
 
 ## Config
 
 ### `src/config/flags.js`
 
-- Current responsibility: Feature toggles, numeric thresholds, and one shop-specific item blacklist.
-- Concern fit: Partial.
-- Notes: The flags and thresholds belong here, but `hiddenShopItemNames` is feature data for shop filtering rather than global config. It currently couples a page-specific dataset to the global flag file.
+- Current responsibility: Global feature toggles and numeric thresholds.
 
 ### `src/config/colors.js`
 
 - Current responsibility: Shared color palette constants.
-- Concern fit: Correct.
-- Notes: Pure theme configuration.
 
 ### `src/config/icons.js`
 
-- Current responsibility: Shared SVG icon strings.
-- Concern fit: Correct.
-- Notes: This file is a glyph library. It is cohesive as long as it only contains icon assets.
+- Current responsibility: Shared SVG icon markup.
 
 ### `src/config/navigation-data.js`
 
-- Current responsibility: Maps page labels to icons and defines sidebar grouping descriptor lists.
-- Concern fit: Mostly correct.
-- Notes: The file is configuration, but it is specifically navigation taxonomy rather than generic config. Its contents are tightly coupled to `layout/navigation.js` and `layout/right-panel.js`.
+- Current responsibility: Navigation taxonomy, icon mappings, sidebar group definitions, right-panel sections, and right-panel shortcuts.
 
 ## Core
 
 ### `src/core/page-context.js`
 
-- Current responsibility: Exposes `pageTitle` from the current document.
-- Concern fit: Correct, but extremely narrow.
-- Notes: This is technically page context, but only one selector constant. It may eventually want to grow into a fuller page-context helper or be merged into a broader DOM context module.
+- Current responsibility: Shared page-context selectors and page-specific DOM-derived values.
 
 ### `src/core/section-header.js`
 
-- Current responsibility: Comment-only section banner for the concatenated artifact.
-- Concern fit: Not really an application concern.
-- Notes: This file exists only to emit a banner comment into the build output. It has no runtime responsibility.
+- Current responsibility: Comment-only section banner emitted into the built artifact ahead of core utilities.
 
 ### `src/core/utilities.js`
 
-- Current responsibility: Shared DOM query, style, element creation, hover, and prefix-matching helpers.
-- Concern fit: Correct.
-- Notes: Cohesive utility layer used throughout the script.
+- Current responsibility: Shared DOM query, style, element creation, hover, and text-matching helpers.
 
 ## Theme
 
 ### `src/theme/section-header.js`
 
-- Current responsibility: Comment-only section banner for the concatenated artifact.
-- Concern fit: Not really an application concern.
-- Notes: Same structural-only role as other `section-header.js` files.
+- Current responsibility: Comment-only section banner emitted into the built artifact ahead of theme modules.
 
 ### `src/theme/nav-links.js`
 
-- Current responsibility: Shared color treatment and hover behavior for navigation links and badges.
-- Concern fit: Correct.
-- Notes: This is a theme helper even though it is used by layout code.
+- Current responsibility: Shared navigation color treatment, badge styling, and hover-state theming.
 
 ### `src/theme/dark-mode-buttons.js`
 
-- Current responsibility: Recolors generic `.btn` anchors for dark mode.
-- Concern fit: Correct.
-- Notes: Pure styling pass.
+- Current responsibility: Dark-mode recoloring for generic button links.
 
 ### `src/theme/dark-mode-living-area.js`
 
-- Current responsibility: Recolors the Living Area, but also hides lines, inserts links, moves elements, removes promos, suppresses forms, and attaches a mutation observer to handle tab swaps.
-- Concern fit: Poor.
-- Notes: This is the largest concern violation in the current tree. The file mixes at least four responsibilities: color styling, layout restructuring, content cleanup, and Living Area-specific behavior.
+- Current responsibility: Dark-mode recoloring for Living Area tabs, panels, tables, and news header elements.
 
 ### `src/theme/dark-mode-shop.js`
 
-- Current responsibility: Recolors shop fonts and costs on the Pawn Czar page.
-- Concern fit: Correct.
-- Notes: Narrow page-specific theme pass.
+- Current responsibility: Dark-mode recoloring for shop fonts and shop cost text.
 
 ### `src/theme/apply-dark-mode.js`
 
-- Current responsibility: Dark mode gate and orchestrator.
-- Concern fit: Correct.
-- Notes: Small coordinator for theme passes.
+- Current responsibility: Dark-mode gate and theme-pass orchestrator.
 
 ## Layout
 
 ### `src/layout/section-header.js`
 
-- Current responsibility: Comment-only section banner for the concatenated artifact.
-- Concern fit: Not really an application concern.
-- Notes: Structural-only build artifact support.
+- Current responsibility: Comment-only section banner emitted into the built artifact ahead of layout modules.
+
+### `src/layout/living-area-layout.js`
+
+- Current responsibility: Living Area structural layout adjustments, account-link insertion, and news-panel placement.
 
 ### `src/layout/topbar-layout.js`
 
-- Current responsibility: Moves topbar stats, resources, and clock; rebuilds stat bars; hides clutter; injects a live swimming reminder into the clock.
-- Concern fit: Partial.
-- Notes: Most of the file is layout work, but the swimming reminder is feature/domain behavior embedded inside a layout file. That logic depends on `features/swimming.js` and should eventually be separated from generic topbar composition.
+- Current responsibility: Topbar stat, resource, and clock relocation; stat-bar restyling; and general page-chrome hiding.
 
 ### `src/layout/navigation.js`
 
-- Current responsibility: Styles topbar and sidebar navigation, replaces labels with icons, groups links into labeled sections, and inserts icons into links.
-- Concern fit: Mostly correct.
-- Notes: This is layout-oriented navigation composition. It also consumes navigation taxonomy from config and theme hover helpers, which is acceptable, though the grouping descriptors are important enough to merit their own navigation-focused config boundary.
+- Current responsibility: Topbar and sidebar navigation rendering, icon insertion, link regrouping, and navigation link styling.
 
 ### `src/layout/right-panel.js`
 
-- Current responsibility: Builds a fixed right panel, moves selected sidebar links into it, and adds a few hard-coded shortcut links.
-- Concern fit: Mostly correct.
-- Notes: This is a layout file, though it contains page-taxonomy data (`RIGHT_PANEL_AREAS`, `RIGHT_PANEL_INFO`) that could be externalized into navigation config.
+- Current responsibility: Right-panel construction and migration of configured sidebar links and shortcuts into that panel.
 
 ### `src/layout/topbar-settings.js`
 
-- Current responsibility: Adds icon-based settings/help/logout buttons to the top bar.
-- Concern fit: Correct.
-- Notes: Focused topbar composition.
+- Current responsibility: Topbar settings/help/logout button construction.
 
 ### `src/layout/topbar-resize.js`
 
-- Current responsibility: Repositions topbar and currency rows, adds a Backpack shortcut, and shifts the container to account for fixed headers.
-- Concern fit: Correct.
-- Notes: Pure layout adjustment.
+- Current responsibility: Fixed-header resizing, currency-row repositioning, backpack shortcut insertion, and container offset adjustment.
 
 ## Features
 
 ### `src/features/section-header.js`
 
-- Current responsibility: Comment-only section banner for the concatenated artifact.
-- Concern fit: Not really an application concern.
-- Notes: Structural-only build artifact support.
+- Current responsibility: Comment-only section banner emitted into the built artifact ahead of feature modules.
 
 ### `src/features/swimming.js`
 
-- Current responsibility: Computes swimming windows from the in-game calendar and formats the next reminder text.
-- Concern fit: Correct.
-- Notes: This is a self-contained domain feature, even though it is consumed by topbar layout code.
+- Current responsibility: Swimming schedule calculation, game-clock parsing, and swimming reminder text formatting.
+
+### `src/features/living-area-cleanup.js`
+
+- Current responsibility: Living Area content suppression, stat-line hiding, promo removal, and related cleanup.
+
+### `src/features/living-area-tabs.js`
+
+- Current responsibility: Living Area tab mutation observation and reapplication of Living Area theme, layout, and cleanup passes.
 
 ### `src/features/maps.js`
 
-- Current responsibility: Detects map tables, strips background images, restores tile colors, injects map-fix CSS, and keeps the map corrected via a mutation observer.
-- Concern fit: Correct.
-- Notes: Cohesive feature enhancement with its own observer lifecycle.
+- Current responsibility: Map tile background restoration, map-specific CSS injection, and map mutation observation.
 
 ### `src/features/hitlist.js`
 
-- Current responsibility: Rewrites hitlist row summaries and hides low-value targets.
-- Concern fit: Correct.
-- Notes: Focused page enhancement.
+- Current responsibility: Hitlist row rewriting and low-value target filtering.
 
 ### `src/features/rpsls.js`
 
-- Current responsibility: Detects the RPSLS encounter and highlights the winning action.
-- Concern fit: Correct.
-- Notes: Focused page enhancement.
+- Current responsibility: RPSLS encounter detection and winning-choice highlighting.
 
 ### `src/features/uni-grid.js`
 
-- Current responsibility: Reads the university grid, brute-forces row and column rotations, and highlights recommended controls.
-- Concern fit: Correct.
-- Notes: Self-contained solver feature.
+- Current responsibility: University grid parsing, brute-force solution search, and recommended-control highlighting.
 
 ### `src/features/rankings.js`
 
-- Current responsibility: Adjusts ranking search offset and hides players below the configured level threshold.
-- Concern fit: Correct.
-- Notes: Focused page enhancement.
+- Current responsibility: Rankings-page offset adjustment and low-level player filtering.
 
 ### `src/features/shop.js`
 
-- Current responsibility: Hides rows that contain blacklisted shop item names.
-- Concern fit: Correct, with misplaced data dependency.
-- Notes: The behavior belongs here, but it currently depends on `hiddenShopItemNames` from `src/config/flags.js`.
+- Current responsibility: Shop row filtering using the shop-owned hidden item name list.
+
+### `src/features/swimming-topbar.js`
+
+- Current responsibility: Swimming reminder injection and live topbar clock updates.
 
 ## Bootstrap
 
 ### `src/bootstrap/section-header.js`
 
-- Current responsibility: Comment-only section banner for the concatenated artifact.
-- Concern fit: Not really an application concern.
-- Notes: Structural-only build artifact support.
+- Current responsibility: Comment-only section banner emitted into the built artifact ahead of bootstrap modules.
 
 ### `src/bootstrap/main.js`
 
-- Current responsibility: Orchestrates theme, layout, and feature initialization and immediately runs `main()`.
-- Concern fit: Correct.
-- Notes: The bootstrap layer is the correct place for top-level execution order, but the called steps are currently grouped in a way that mixes layout and feature execution inside `enhanceCommonLayout()`.
+- Current responsibility: Top-level orchestration of theme passes, layout passes, global features, page features, and startup execution.
 
-## Summary Of Current Concern Issues
+## Reference
 
-The main separation problems are:
+### `src/seed/tampermonkey-script-seed.js`
 
-1. `src/theme/dark-mode-living-area.js` mixes theme, layout, cleanup, and Living Area-specific behavior.
-2. `src/layout/topbar-layout.js` contains true layout code plus swimming feature presentation and update scheduling.
-3. `src/config/flags.js` carries shop-specific item data.
-4. `src/layout/right-panel.js` and `src/layout/navigation.js` each own hard-coded navigation taxonomy that could be consolidated.
-5. The `section-header.js` files are build-structure artifacts rather than runtime concern boundaries.
+- Current responsibility: Historical monolith reference for tracing legacy behavior and refactor provenance.

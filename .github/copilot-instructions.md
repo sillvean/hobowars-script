@@ -5,6 +5,8 @@ This project is a split-source Tampermonkey userscript.
 Source files under `src/` are concatenated in a fixed order by `build-userscript.ps1` into a distributable artifact under `artifacts/`.
 The script is not an ES module project. Preserve top-level globals, side effects, and file ordering unless the task explicitly changes the architecture.
 Use `src/seed/tampermonkey-script-seed.js` as the historical monolith reference when tracing behavior during refactors.
+Use [SRC_FILE_RESPONSIBILITIES.md](../SRC_FILE_RESPONSIBILITIES.md) as the project-structure overview and module index.
+Treat that linked file as the first-stop overview of the codebase structure; only load concrete source files when they are necessary for the current task.
 
 ## Code Style
 Keep changes small, mechanical, and behavior-preserving when splitting or relocating code.
