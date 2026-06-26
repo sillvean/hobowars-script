@@ -1,3 +1,5 @@
+// --- Hitlist: collapse notes and hide low-value targets --------------------
+
 function enhanceHitlistTable() {
     if (!enhanceHitlist) {
         return;
@@ -55,5 +57,3 @@ function enhanceHitlistTable() {
         }
     });
 }
-
-// --- RPSLS: highlight the winning choice -----------------------------------

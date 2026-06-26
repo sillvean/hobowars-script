@@ -1,9 +1,3 @@
-/* =============================================================================
- * THEME (COLORS)
- * The palette lives in `colors`. Everything that only assigns colors lives in
- * this section: shared accent helpers plus the dark-mode recolor passes.
- * ========================================================================== */
-
 // Swap a notification count badge between its idle and highlighted colors.
 function styleCountBadge(badge, highlighted) {
     if (!badge) {
@@ -270,4 +264,3 @@ function darkModeShop() {
     qsa("font").forEach((font) => css(font, { color: colors.almostWhite }));
     qsa(".shopCost").forEach((cost) => css(cost, { color: colors.almostWhite }));
 }
-

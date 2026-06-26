@@ -1,3 +1,5 @@
+// --- University grid: brute-force the best row/column rotations ------------
+
 const uniGrid = [[], [], [], []];
 
 function enhanceUniGrid() {
@@ -70,5 +72,3 @@ function solveUniGrid(originalGrid) {
 
     return best;
 }
-
-// --- Rankings: trim the list and hide players below the level threshold ----

@@ -3,6 +3,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $artifactsDirectory = Join-Path $repoRoot 'artifacts'
 $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$latestOutputPath = Join-Path $artifactsDirectory 'tampermonkey-script.js'
 $outputFileName = "tampermonkey-script-$timestamp.js"
 $outputPath = Join-Path $artifactsDirectory $outputFileName
 $sourceFiles = @(
@@ -13,19 +14,24 @@ $sourceFiles = @(
     'src/config/icons.js'
     'src/config/navigation-data.js'
     'src/core/page-context.js'
+    'src/core/section-header.js'
     'src/core/utilities.js'
+    'src/theme/section-header.js'
     'src/theme/dark-mode.js'
+    'src/layout/section-header.js'
     'src/layout/topbar-layout.js'
     'src/layout/navigation.js'
     'src/layout/right-panel.js'
     'src/layout/topbar-settings.js'
     'src/layout/topbar-resize.js'
+    'src/features/section-header.js'
     'src/features/maps.js'
     'src/features/hitlist.js'
     'src/features/rpsls.js'
     'src/features/uni-grid.js'
     'src/features/rankings.js'
     'src/features/shop.js'
+    'src/bootstrap/section-header.js'
     'src/bootstrap/main.js'
 )
 
@@ -35,10 +41,10 @@ $sections = foreach ($relativePath in $sourceFiles) {
         throw "Missing source file: $relativePath"
     }
 
-    [System.IO.File]::ReadAllText($fullPath)
+    [System.IO.File]::ReadAllText($fullPath).TrimEnd([Environment]::NewLine.ToCharArray())
 }
 
-$combined = ($sections -join '')
+$combined = ($sections -join ([Environment]::NewLine + [Environment]::NewLine))
 
 if (-not (Test-Path $artifactsDirectory)) {
     New-Item -ItemType Directory -Path $artifactsDirectory | Out-Null
@@ -72,5 +78,6 @@ if ($latestHash -eq $newHash) {
 }
 
 [System.IO.File]::WriteAllText($outputPath, $combined)
+[System.IO.File]::WriteAllText($latestOutputPath, $combined)
 
-Write-Output "Built $outputPath from $($sourceFiles.Count) source files."
+Write-Output "Built $outputPath and updated $latestOutputPath from $($sourceFiles.Count) source files."

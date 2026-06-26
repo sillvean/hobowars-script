@@ -1,4 +1,3 @@
-
 // Feature flags. Colors live in `colors`, icon SVGs in `icons`, and nav
 // grouping in the descriptor lists further below.
 const demoMode = false;

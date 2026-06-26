@@ -54,4 +54,3 @@ function resizeTopbar() {
     css(container, { "padding-top": "100px" });
     css(leftPanel, { top: "100px" });
 }
-

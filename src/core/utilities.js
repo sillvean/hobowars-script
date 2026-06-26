@@ -1,8 +1,3 @@
-/* =============================================================================
- * UTILITIES
- * Tiny DOM/style helpers shared by every section.
- * ========================================================================== */
-
 const qs = (selector, root = document) => root.querySelector(selector);
 const qsa = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 

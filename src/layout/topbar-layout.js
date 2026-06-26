@@ -1,10 +1,3 @@
-/* =============================================================================
- * LAYOUT
- * Everything that hides, moves, or restructures page elements. Color choices
- * here come from the palette/theme helpers; this section owns *where* things
- * go, not the color values.
- * ========================================================================== */
-
 // --- Top bar: stats, resources, clock --------------------------------------
 
 // Wrap a top-bar list item so it keeps the site styling once relocated.
@@ -202,5 +195,3 @@ function hideClutter() {
     css(leftPanelLists[1], { display: "none" });
     css(leftPanelLists[2], { display: "none" });
 }
-
-// --- Navigation menus ------------------------------------------------------

@@ -1,3 +1,5 @@
+// --- RPSLS: highlight the winning choice -----------------------------------
+
 function solveRPSLS() {
     const contentArea = qs(".content-area");
     const text = contentArea.innerText;
@@ -24,5 +26,3 @@ function solveRPSLS() {
 
     css(links[correctIndex], { color: `${colors.red} !important` });
 }
-
-// --- University grid: brute-force the best row/column rotations ------------

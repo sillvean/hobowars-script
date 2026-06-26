@@ -1,9 +1,3 @@
-/* =============================================================================
- * FEATURES
- * Gameplay-specific helpers: map cleanup, hitlist, RPSLS, university grid,
- * and rankings.
- * ========================================================================== */
-
 // --- Map cleanup: strip background images so solid tile colors show --------
 
 const MAP_TABLE_SELECTOR = "table[cellspacing='0'][cellpadding='0'][bgcolor='#000000']";
@@ -162,5 +156,3 @@ function applyMapFix() {
         isApplyingMapFix = false;
     }
 }
-
-// --- Hitlist: collapse notes and hide low-value targets --------------------

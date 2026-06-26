@@ -1,3 +1,5 @@
+// --- Rankings: trim the list and hide players below the level threshold ----
+
 function enhanceRankingsTable() {
     if (!enhanceRankings) {
         return;

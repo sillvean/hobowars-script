@@ -188,3 +188,4 @@ function formatNextSwimmingReminder(now, nextStart) {
     }
 
     return `Swim: ${monthShortNames[nextStart.getMonth()]} ${nextStart.getDate()} ${formatSwimmingHour(nextStart)}`;
+}

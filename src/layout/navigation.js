@@ -1,3 +1,5 @@
+// --- Navigation menus ------------------------------------------------------
+
 // Base look + accent hover (with count-badge swap) for menu links.
 function styleNavLinks(links) {
     links.forEach((link) => {
