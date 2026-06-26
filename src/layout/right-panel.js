@@ -3,8 +3,13 @@ function buildRightPanel() {
     const panelWidth = "15%";
     const panelMaxWidth = "200px";
     const leftPanel = qs(".left-panel");
-    css(leftPanel, { "width": panelWidth, "min-width": panelMinWidth, "max-width": panelMaxWidth });
     const leftSpacer = qs(".left-spacer");
+    const container = qs(".container");
+    if (!leftPanel || !leftSpacer || !container) {
+        return;
+    }
+
+    css(leftPanel, { "width": panelWidth, "min-width": panelMinWidth, "max-width": panelMaxWidth });
     css(leftSpacer, { "display": "block", "width": panelWidth, "min-width": panelMinWidth, "max-width": panelMaxWidth });
     const rightSpacer = leftSpacer.cloneNode(true);
 
@@ -46,7 +51,6 @@ function buildRightPanel() {
         }));
     });
 
-    const container = qs(".container");
     container.append(rightSpacer);
     container.append(rightPanel);
 }

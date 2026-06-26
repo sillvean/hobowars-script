@@ -26,7 +26,7 @@ function cleanupLivingArea() {
         css(mailForm, { display: "none" });
     }
 
-    const newsHeader = qsa("div[style*='height:25px']").find((el) => el.textContent?.includes("News"));
+    const newsHeader = findLivingAreaNewsHeader();
     const invitePromoLink = qsa("a[href*='cmd=rfriend']").find((link) => link.textContent?.trim() === "Click Here");
     if (invitePromoLink) {
         let promoStart = invitePromoLink;

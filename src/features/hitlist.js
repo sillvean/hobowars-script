@@ -1,5 +1,18 @@
 // --- Hitlist: collapse notes and hide low-value targets --------------------
 
+function parseHitlistNumber(token, fallback = null) {
+    const match = token?.match(/(\d[\d,]*(?:\.\d+)?)/);
+    return match ? Number.parseFloat(match[1].replace(/,/g, "")) : fallback;
+}
+
+function formatHitlistValue(value) {
+    if (!Number.isFinite(value)) {
+        return "???";
+    }
+
+    return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+}
+
 function enhanceHitlistTable() {
     if (!enhanceHitlist) {
         return;
@@ -11,6 +24,9 @@ function enhanceHitlistTable() {
 
     rows.forEach((row, index) => {
         const cells = qsa("td", row);
+        if (cells.length < 7) {
+            return;
+        }
 
         // Hide Battle count, Alive, and the unused column.
         css(cells[6], { display: "none" });
@@ -21,8 +37,13 @@ function enhanceHitlistTable() {
             return;
         }
 
-        const sameSide = cells[4].querySelector("div>b>font").innerHTML === myCitySide;
-        const noteEl = cells[1].querySelector("div>font");
+        const sameSideLabel = cells[4]?.querySelector("div>b>font")?.innerHTML;
+        const noteEl = cells[1]?.querySelector("div>font");
+        if (!sameSideLabel || !noteEl) {
+            return;
+        }
+
+        const sameSide = sameSideLabel === myCitySide;
         const noteParts = noteEl.innerHTML.split(" | ");
 
         let gangPart = null;
@@ -43,12 +64,16 @@ function enhanceHitlistTable() {
         });
 
         const gangPrefix = gangPart ? `<span style='color: green; font-weight: bold'>${gangPart}</span> ` : "";
-        const requiredHits = hitsPart ? hitsPart[3] : 1;
+        const requiredHits = parseHitlistNumber(hitsPart, 1);
         const currentExpPart = sameSide ? (sameSideExpPart ?? "???") : (otherSideExpPart ?? "???");
-        const currentExp = currentExpPart.replace(",", "").replace("k", "").substring(6);
+        const currentExp = parseHitlistNumber(currentExpPart);
+        if (!Number.isFinite(currentExp) || !Number.isFinite(requiredHits) || requiredHits <= 0) {
+            return;
+        }
+
         const resultExp = currentExp / requiredHits;
 
-        noteEl.innerHTML = `${gangPrefix}${resultExp}k (${requiredHits})`;
+        noteEl.innerHTML = `${gangPrefix}${formatHitlistValue(resultExp)}k (${requiredHits})`;
         if (requiredHits > 1) {
             css(noteEl, { color: colors.red });
         }

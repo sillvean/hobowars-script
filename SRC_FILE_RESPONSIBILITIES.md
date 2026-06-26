@@ -24,23 +24,24 @@ The userscript is currently concatenated in this order by `build-userscript.ps1`
 15. `src/theme/apply-dark-mode.js`
 16. `src/layout/section-header.js`
 17. `src/layout/living-area-layout.js`
-18. `src/layout/topbar-layout.js`
-19. `src/layout/navigation.js`
-20. `src/layout/right-panel.js`
-21. `src/layout/topbar-settings.js`
-22. `src/layout/topbar-resize.js`
-23. `src/features/section-header.js`
-24. `src/features/living-area-cleanup.js`
-25. `src/features/living-area-tabs.js`
-26. `src/features/maps.js`
-27. `src/features/hitlist.js`
-28. `src/features/rpsls.js`
-29. `src/features/uni-grid.js`
-30. `src/features/rankings.js`
-31. `src/features/shop.js`
-32. `src/features/swimming-topbar.js`
-33. `src/bootstrap/section-header.js`
-34. `src/bootstrap/main.js`
+18. `src/layout/panel-helpers.js`
+19. `src/layout/topbar-layout.js`
+20. `src/layout/navigation.js`
+21. `src/layout/right-panel.js`
+22. `src/layout/topbar-settings.js`
+23. `src/layout/topbar-resize.js`
+24. `src/features/section-header.js`
+25. `src/features/living-area-cleanup.js`
+26. `src/features/living-area-tabs.js`
+27. `src/features/maps.js`
+28. `src/features/hitlist.js`
+29. `src/features/rpsls.js`
+30. `src/features/uni-grid.js`
+31. `src/features/rankings.js`
+32. `src/features/shop.js`
+33. `src/features/swimming-topbar.js`
+34. `src/bootstrap/section-header.js`
+35. `src/bootstrap/main.js`
 
 ## Meta
 
@@ -115,6 +116,10 @@ The userscript is currently concatenated in this order by `build-userscript.ps1`
 ### `src/layout/living-area-layout.js`
 
 - Current responsibility: Living Area structural layout adjustments, account-link insertion, and news-panel placement.
+
+### `src/layout/panel-helpers.js`
+
+- Current responsibility: Shared helper functions for labeled side-panel sections and migrated panel links.
 
 ### `src/layout/topbar-layout.js`
 

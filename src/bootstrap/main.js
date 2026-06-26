@@ -7,7 +7,6 @@ function applyLayout() {
     relocateResources();
     relocateTopbarMenu();
     hideClutter();
-    layoutLivingArea();
     buildRightPanel();
     resizeTopbar();
     buildTopbarSettings();
@@ -21,7 +20,6 @@ function runGlobalFeatures() {
 }
 
 function runPageFeatures() {
-    cleanupLivingArea();
     enhanceHitlistTable();
     hideShopItemsByName();
     solveRPSLS();
@@ -32,6 +30,9 @@ function runPageFeatures() {
 function main() {
     applyTheme();
     applyLayout();
+    // Living Area work is order-sensitive: theme tweaks, layout changes, and
+    // cleanup all touch the same subtree and should refresh through one path.
+    refreshLivingAreaEnhancements();
     runGlobalFeatures();
     runPageFeatures();
 }

@@ -36,7 +36,7 @@ function darkModeLivingArea() {
     }));
     panelStyle(qs(".more_info>div"));
 
-    const newsHeader = qsa("div[style*='height:25px']").find((el) => el.textContent?.includes("News"));
+    const newsHeader = findLivingAreaNewsHeader();
     if (newsHeader) {
         css(newsHeader, {
             "background-color": `${colors.darkGray} !important`,

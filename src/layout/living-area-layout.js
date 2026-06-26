@@ -9,7 +9,7 @@ function layoutLivingArea() {
     const tattoo = qs("#tattooImg");
     const accountLinksList = qs("ul.more_info.nofloat.statsDisplay");
     const referredLink = accountLinksList?.querySelector("a[href*='cmd=referred']")?.closest("li");
-    const newsHeader = qsa("div[style*='height:25px']").find((el) => el.textContent?.includes("News"));
+    const newsHeader = findLivingAreaNewsHeader();
 
     if (contentAreaTable) {
         css(contentAreaTable, {

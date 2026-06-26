@@ -2,6 +2,10 @@
 
 // Wrap a top-bar list item so it keeps the site styling once relocated.
 function relocateTopbarListItem(parent, item, width) {
+    if (!parent || !item) {
+        return;
+    }
+
     const wrapperList = createEl("ul");
     wrapperList.append(item);
     const wrapper = createEl("span", { style: { display: "inline-block" } });
@@ -70,9 +74,17 @@ function restyleStatBar(statBar, color, icon) {
 
 function relocateStats() {
     const stats = qs(".top-center>.stats");
+    if (!stats) {
+        return;
+    }
+
     css(stats, { margin: "0 auto", display: "flex", "justify-content": "center" });
 
     const list = qs("ul", stats);
+    if (!list) {
+        return;
+    }
+
     css(list, { display: "none" });
     qsa("li", list).slice(0, 4).forEach((item) => relocateTopbarListItem(stats, item, "220px"));
 
@@ -84,16 +96,26 @@ function relocateStats() {
 
 function relocateResources() {
     const resources = qs(".top-center>.currency");
+    if (!resources) {
+        return;
+    }
+
     css(resources, { margin: "6px auto 0px auto", display: "flex", "justify-content": "center" });
 
     const list = qs("ul", resources);
+    if (!list) {
+        return;
+    }
+
     css(list, { display: "none" });
     const items = qsa("li", list);
 
     items.slice(0, 4).forEach((item) => relocateTopbarListItem(resources, item, "130px"));
 
     // Remove the colon from the Token resource.
-    items[3].innerHTML = items[3].innerHTML.replace(":", "");
+    if (items[3]) {
+        items[3].innerHTML = items[3].innerHTML.replace(":", "");
+    }
 
     if (demoMode) {
         css(qs(".no-mobile.displayMoney"), { visibility: "hidden" });
@@ -107,6 +129,11 @@ function relocateResources() {
 
 function relocateClock() {
     const clock = qs(".clock");
+    const currency = qs(".currency");
+    if (!clock || !currency) {
+        return;
+    }
+
     css(clock, {
         display: "flex",
         "justify-content": "right",
@@ -115,10 +142,19 @@ function relocateClock() {
     });
 
     const sections = qsa(".clock>.section-row");
+    if (sections.length < 3) {
+        return;
+    }
+
     css(sections[1], { display: "none" });
     css(sections[2], { display: "none" });
 
     const dateEl = qs("i", sections[0]);
+    const displayEffect = qs(".displayEffect", sections[0]);
+    if (!dateEl || !displayEffect) {
+        return;
+    }
+
     css(dateEl, { display: "none" });
     const newDate = createEl("span", {
         className: "hw-clock-date",
@@ -126,19 +162,15 @@ function relocateClock() {
         style: { "align-items": "center", display: "flex", margin: "0 10px 2px 2px" },
     });
 
-    const displayEffect = qs(".displayEffect", sections[0]);
     css(displayEffect, { "padding-right": "23px" });
 
     sections[0].prepend(newDate);
     sections[0].append(displayEffect);
 
-    const currency = qs(".currency");
     currency.append(clock);
 
     const donator = qs(".becomedon");
     css(donator, { "display": "none" });
-
-    currency.append(displayEffect);
 }
 
 function relocateTopbarMenu() {

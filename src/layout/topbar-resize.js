@@ -4,6 +4,9 @@ function resizeTopbar() {
     const currency = qs(".currency");
     const container = qs(".container");
     const leftPanel = qs(".left-panel");
+    if (!topbar || !topbarMenu || !currency || !container || !leftPanel) {
+        return;
+    }
 
     document.body.append(currency);
 
@@ -49,7 +52,10 @@ function resizeTopbar() {
         href: "https://www.hobowars.com/game/game.php?sr=112&cmd=backpack",
         innerText: "Backpack",
     }));
-    qs("ul", topbarMenu).prepend(backpackItem);
+    const topbarMenuList = qs("ul", topbarMenu);
+    if (topbarMenuList) {
+        topbarMenuList.prepend(backpackItem);
+    }
 
     css(container, { "padding-top": "100px" });
     css(leftPanel, { top: "100px" });

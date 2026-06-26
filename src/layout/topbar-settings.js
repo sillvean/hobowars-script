@@ -18,6 +18,10 @@ function addSettingsButton(parent, href, icon) {
 
 function buildTopbarSettings() {
     const topbar = qs(".topbar-menu");
+    if (!topbar) {
+        return;
+    }
+
     css(topbar, { display: "flex", "align-items": "center", "justify-content": "space-between" });
 
     const settings = createEl("div", {

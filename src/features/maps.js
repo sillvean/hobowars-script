@@ -6,7 +6,11 @@ const MAP_TILE_SELECTOR = "td[bgcolor]";
 let isApplyingMapFix = false;
 let mapFixObserver = null;
 let mapFixStyleElement = null;
-let mapFixScheduled = false;
+const scheduleMapFixFrame = createRafScheduler(() => {
+    if (!isApplyingMapFix) {
+        applyMapFix();
+    }
+});
 
 function isTargetMapTable(table) {
     if (!(table instanceof HTMLTableElement)) {
@@ -103,17 +107,11 @@ function restoreMap(table) {
 }
 
 function scheduleMapFix() {
-    if (mapFixScheduled || isApplyingMapFix) {
+    if (isApplyingMapFix) {
         return;
     }
 
-    mapFixScheduled = true;
-    window.requestAnimationFrame(() => {
-        mapFixScheduled = false;
-        if (!isApplyingMapFix) {
-            applyMapFix();
-        }
-    });
+    scheduleMapFixFrame();
 }
 
 function ensureMapFixObserver(table) {

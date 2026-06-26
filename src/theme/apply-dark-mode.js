@@ -4,6 +4,5 @@ function applyDarkMode() {
     }
 
     darkModeButtons();
-    darkModeLivingArea();
     darkModeShop();
 }

@@ -43,3 +43,23 @@ function onHover(node, onEnter, onLeave) {
 
 const startsWithAny = (text, prefixes) => prefixes.some((prefix) => text.startsWith(prefix));
 
+function findLivingAreaNewsHeader(root = document) {
+    return qsa("div[style*='height:25px']", root).find((el) => el.textContent?.includes("News"));
+}
+
+function createRafScheduler(callback) {
+    let scheduled = false;
+
+    return () => {
+        if (scheduled) {
+            return;
+        }
+
+        scheduled = true;
+        window.requestAnimationFrame(() => {
+            scheduled = false;
+            callback();
+        });
+    };
+}
+

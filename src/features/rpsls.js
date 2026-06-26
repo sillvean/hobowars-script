@@ -2,6 +2,10 @@
 
 function solveRPSLS() {
     const contentArea = qs(".content-area");
+    if (!contentArea) {
+        return;
+    }
+
     const text = contentArea.innerText;
     const isRPSLS =
         text.includes("You nod your head and Johnson sticks his fist in his palm.") ||
@@ -24,5 +28,8 @@ function solveRPSLS() {
         correctIndex = 4;
     }
 
-    css(links[correctIndex], { color: `${colors.red} !important` });
+    const targetLink = links[correctIndex];
+    if (targetLink) {
+        css(targetLink, { color: `${colors.red} !important` });
+    }
 }

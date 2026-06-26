@@ -24,6 +24,7 @@ $sourceFiles = @(
     'src/theme/apply-dark-mode.js'
     'src/layout/section-header.js'
     'src/layout/living-area-layout.js'
+    'src/layout/panel-helpers.js'
     'src/layout/topbar-layout.js'
     'src/layout/navigation.js'
     'src/layout/right-panel.js'
